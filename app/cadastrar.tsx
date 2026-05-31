@@ -80,7 +80,15 @@ export default function CadastrarEvento() {
   };
 
   const handleSalvar = async () => {
-    if (!titulo || !local || !descricao || !img1) return Alert.alert("Atenção", "Preencha Título, Local, Descrição e ao menos a primeira Foto.");
+    // 1. VALIDAÇÃO DOS CAMPOS
+    if (!titulo || !local || !descricao || !img1) {
+      if (Platform.OS === 'web') {
+        window.alert("Atenção: Preencha Título, Local, Descrição e ao menos a primeira Foto.");
+      } else {
+        Alert.alert("Atenção", "Preencha Título, Local, Descrição e ao menos a primeira Foto.");
+      }
+      return;
+    }
     
     setCarregando(true);
     try {
@@ -99,12 +107,31 @@ export default function CadastrarEvento() {
         atualizadoEm: serverTimestamp() 
       };
 
-      if (params.id) await updateDoc(doc(db, "eventos", params.id as string), dados);
-      else await addDoc(collection(db, "eventos"), { ...dados, criadoEm: serverTimestamp() });
+      // 2. GRAVAÇÃO NO FIREBASE
+      if (params.id) {
+        await updateDoc(doc(db, "eventos", params.id as string), dados);
+      } else {
+        await addDoc(collection(db, "eventos"), { ...dados, criadoEm: serverTimestamp() });
+      }
+      
+      // 3. MENSAGEM DE SUCESSO E RETORNO
+      if (Platform.OS === 'web') {
+        window.alert("Evento salvo com sucesso!");
+      } else {
+        Alert.alert("Sucesso", "Evento salvo com sucesso!");
+      }
       
       router.back();
-    } catch (error) { Alert.alert("Erro", "Falha ao salvar."); }
-    finally { setCarregando(false); }
+
+    } catch (error) { 
+      if (Platform.OS === 'web') {
+        window.alert("Erro: Falha ao salvar o evento.");
+      } else {
+        Alert.alert("Erro", "Falha ao salvar."); 
+      }
+    } finally { 
+      setCarregando(false); 
+    }
   };
 
   if (verificandoAcesso) return <ActivityIndicator style={{flex:1}} size="large" />;

@@ -21,15 +21,18 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
-    "web": {
+   "web": {
       "output": "static",
       "bundler": "metro",
       "favicon": "./assets/images/favicon.png",
-      "name": "SaquaInfo",
+      "name": "SaquaInfo - Turismo e Eventos",
       "shortName": "SaquaInfo",
-      "themeColor": "#ffffff",
+      "themeColor": "#007bff",
       "backgroundColor": "#ffffff",
-      "display": "standalone"
+      "display": "standalone",
+      "startUrl": "/",
+      "orientation": "portrait"
+    
     },
     "plugins": [
       "expo-router",

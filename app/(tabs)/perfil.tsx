@@ -2,33 +2,49 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import React from 'react';
-import { Alert, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { auth } from '../../firebaseConfig';
 
 export default function PerfilScreen() {
   const router = useRouter();
   const user = auth.currentUser;
 
-  const handleLogout = () => {
-    Alert.alert(
-      "Sair",
-      "Deseja realmente sair da sua conta?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Sair", 
-          style: "destructive", 
-          onPress: async () => {
-            try {
-              await signOut(auth);
-              // O Root Layout redirecionará automaticamente para o login
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível deslogar.");
-            }
-          } 
+  const handleLogout = async () => {
+    // 1. SE FOR WEB (VERCEL / PWA)
+    if (Platform.OS === 'web') {
+      const confirmar = window.confirm("Deseja realmente sair da sua conta?");
+      if (confirmar) {
+        try {
+          await signOut(auth);
+          router.replace('/'); // Força a volta para o Login
+        } catch (error) {
+          console.error(error);
+          window.alert("Não foi possível deslogar.");
         }
-      ]
-    );
+      }
+    } 
+    // 2. SE FOR CELULAR (ANDROID / IOS)
+    else {
+      Alert.alert(
+        "Sair",
+        "Deseja realmente sair da sua conta?",
+        [
+          { text: "Cancelar", style: "cancel" },
+          { 
+            text: "Sair", 
+            style: "destructive", 
+            onPress: async () => {
+              try {
+                await signOut(auth);
+                router.replace('/'); // Força a volta para o Login
+              } catch (error) {
+                Alert.alert("Erro", "Não foi possível deslogar.");
+              }
+            } 
+          }
+        ]
+      );
+    }
   };
 
   return (

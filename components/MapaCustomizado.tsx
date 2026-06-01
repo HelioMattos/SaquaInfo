@@ -7,7 +7,12 @@ export default function MapaCustomizado({ coordenadas, setCoordenadas, isDark }:
       style={{ width: '100%', height: 200, borderRadius: 10 }} // Altura padrão definida
       userInterfaceStyle={isDark ? 'dark' : 'light'} 
       initialRegion={{ ...coordenadas, latitudeDelta: 0.01, longitudeDelta: 0.01 }} 
-      onPress={(e) => setCoordenadas(e.nativeEvent.coordinate)}
+      onPress={(e) => {
+        // Só atualiza se a função setCoordenadas existir (como na tela de cadastro)
+        if (setCoordenadas) {
+          setCoordenadas(e.nativeEvent.coordinate);
+        }
+      }}
     >
       <Marker coordinate={coordenadas} />
     </MapView>

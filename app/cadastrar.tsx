@@ -195,8 +195,31 @@ export default function CadastrarEvento() {
         <Text style={styles.label}>Descrição</Text>
         <TextInput style={[styles.input, styles.textArea]} value={descricao} onChangeText={setDescricao} multiline placeholderTextColor={styles.colors.placeholder} placeholder="Detalhes..." />
 
+        {/* CAMPOS MANUAIS PARA A WEB */}
+        <Text style={styles.label}>Coordenadas (Lat / Lng)</Text>
+        <Text style={{fontSize: 12, color: '#666', marginBottom: 5}}>
+          Na Web, cole as coordenadas aqui. No celular, toque no mapa.
+        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+          <TextInput
+            style={[styles.input, { flex: 1, marginRight: 5, marginBottom: 0 }]}
+            value={String(coordenadas.latitude)}
+            onChangeText={(text) => setCoordenadas({...coordenadas, latitude: parseFloat(text) || 0})}
+            keyboardType="numeric"
+            placeholder="Latitude"
+            placeholderTextColor={styles.colors.placeholder}
+          />
+          <TextInput
+            style={[styles.input, { flex: 1, marginLeft: 5, marginBottom: 0 }]}
+            value={String(coordenadas.longitude)}
+            onChangeText={(text) => setCoordenadas({...coordenadas, longitude: parseFloat(text) || 0})}
+            keyboardType="numeric"
+            placeholder="Longitude"
+            placeholderTextColor={styles.colors.placeholder}
+          />
+        </View>
+
         {/* MAPA ABSTRAÍDO E PROTEGIDO CONTRA ERROS NA WEB */}
-        <Text style={styles.label}>Toque no Mapa para ajustar o local exato</Text>
         <View style={styles.mapContainer}>
           <MapaCustomizado 
             coordenadas={coordenadas} 

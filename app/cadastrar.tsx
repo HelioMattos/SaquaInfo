@@ -11,6 +11,12 @@ import { getCadastrarStyles } from '../styles/cadastrar.styles';
 // Importação do mapa que se adapta sozinho para Web ou App
 import MapaCustomizado from '../components/MapaCustomizado';
 
+// Função auxiliar para formatar a data inicial na caixa de texto da Web
+const formatarDataInput = (d: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 export default function CadastrarEvento() {
   const { isDark } = useTheme();
   const styles = getCadastrarStyles(isDark);
@@ -29,11 +35,16 @@ export default function CadastrarEvento() {
   const [img2, setImg2] = useState('');
   const [img3, setImg3] = useState('');
 
+  // Estados nativos para o Telemóvel
   const [dataInicio, setDataInicio] = useState(new Date());
   const [dataTermino, setDataTermino] = useState(new Date());
   const [showPicker, setShowPicker] = useState<{show: boolean, mode: 'date' | 'time', target: 'inicio' | 'termino'}>({
     show: false, mode: 'date', target: 'inicio'
   });
+
+  // Estados em texto exclusivos para a Web
+  const [dataInicioTexto, setDataInicioTexto] = useState(formatarDataInput(new Date()));
+  const [dataTerminoTexto, setDataTerminoTexto] = useState(formatarDataInput(new Date()));
 
   const categorias = [
     { id: 'Esportes', icon: 'fitness' },
@@ -60,8 +71,19 @@ export default function CadastrarEvento() {
       setDescricao(params.descricao as string || '');
       setCategoria((params.categoria as string) || 'Outros');
       setCoordenadas({ latitude: parseFloat(params.lat as string), longitude: parseFloat(params.lng as string) });
-      if (params.dataInicio) setDataInicio(new Date(params.dataInicio as string));
-      if (params.dataTermino) setDataTermino(new Date(params.dataTermino as string));
+      
+      // Ao carregar para edição, ajustamos tanto a data nativa quanto o texto da web
+      if (params.dataInicio) {
+        const d = new Date(params.dataInicio as string);
+        setDataInicio(d);
+        setDataInicioTexto(formatarDataInput(d));
+      }
+      if (params.dataTermino) {
+        const d = new Date(params.dataTermino as string);
+        setDataTermino(d);
+        setDataTerminoTexto(formatarDataInput(d));
+      }
+
       if (params.imagens) {
         const imgs = (params.imagens as string).split(',');
         setImg1(imgs[0] || '');
@@ -80,17 +102,36 @@ export default function CadastrarEvento() {
   };
 
   const handleSalvar = async () => {
-    // 1. VALIDAÇÃO DOS CAMPOS
     if (!titulo || !local || !descricao || !img1) {
-      if (Platform.OS === 'web') {
-        window.alert("Atenção: Preencha Título, Local, Descrição e ao menos a primeira Foto.");
-      } else {
-        Alert.alert("Atenção", "Preencha Título, Local, Descrição e ao menos a primeira Foto.");
-      }
+      if (Platform.OS === 'web') window.alert("Atenção: Preencha Título, Local, Descrição e ao menos a primeira Foto.");
+      else Alert.alert("Atenção", "Preencha Título, Local, Descrição e ao menos a primeira Foto.");
       return;
     }
     
     setCarregando(true);
+
+    // Preparar as datas dependendo de onde o usuário está
+    let isoInicio = dataInicio.toISOString();
+    let isoTermino = dataTermino.toISOString();
+
+    if (Platform.OS === 'web') {
+      try {
+        // Converte o texto "31/05/2026 15:00" de volta para o padrão de banco de dados
+        const parseDataBr = (str: string) => {
+          const [data, hora] = str.split(' ');
+          const [dia, mes, ano] = data.split('/');
+          const [h, m] = hora.split(':');
+          return new Date(Number(ano), Number(mes) - 1, Number(dia), Number(h), Number(m)).toISOString();
+        };
+        isoInicio = parseDataBr(dataInicioTexto);
+        isoTermino = parseDataBr(dataTerminoTexto);
+      } catch (e) {
+        window.alert("Formato de data inválido. Use o padrão DD/MM/AAAA HH:MM");
+        setCarregando(false);
+        return;
+      }
+    }
+
     try {
       const listaFotos = [img1, img2, img3].filter(url => url !== '').join(',');
 
@@ -100,35 +141,27 @@ export default function CadastrarEvento() {
         descricao, 
         categoria, 
         imagens: listaFotos,
-        dataInicio: dataInicio.toISOString(), 
-        dataTermino: dataTermino.toISOString(), 
+        dataInicio: isoInicio, 
+        dataTermino: isoTermino, 
         latitude: coordenadas.latitude, 
         longitude: coordenadas.longitude, 
         atualizadoEm: serverTimestamp() 
       };
 
-      // 2. GRAVAÇÃO NO FIREBASE
       if (params.id) {
         await updateDoc(doc(db, "eventos", params.id as string), dados);
       } else {
         await addDoc(collection(db, "eventos"), { ...dados, criadoEm: serverTimestamp() });
       }
       
-      // 3. MENSAGEM DE SUCESSO E RETORNO
-      if (Platform.OS === 'web') {
-        window.alert("Evento salvo com sucesso!");
-      } else {
-        Alert.alert("Sucesso", "Evento salvo com sucesso!");
-      }
+      if (Platform.OS === 'web') window.alert("Evento salvo com sucesso!");
+      else Alert.alert("Sucesso", "Evento salvo com sucesso!");
       
       router.back();
 
     } catch (error) { 
-      if (Platform.OS === 'web') {
-        window.alert("Erro: Falha ao salvar o evento.");
-      } else {
-        Alert.alert("Erro", "Falha ao salvar."); 
-      }
+      if (Platform.OS === 'web') window.alert("Erro: Falha ao salvar o evento.");
+      else Alert.alert("Erro", "Falha ao salvar."); 
     } finally { 
       setCarregando(false); 
     }
@@ -144,7 +177,7 @@ export default function CadastrarEvento() {
         <Text style={styles.label}>Título</Text>
         <TextInput style={styles.input} value={titulo} onChangeText={setTitulo} placeholderTextColor={styles.colors.placeholder} placeholder="Nome do evento" />
 
-        <Text style={styles.label}>Local (Endereço ou Nome do Estabelecimento)</Text>
+        <Text style={styles.label}>Local</Text>
         <TextInput style={styles.input} value={local} onChangeText={setLocal} placeholderTextColor={styles.colors.placeholder} placeholder="Ex: Praia de Itaúna" />
 
         <Text style={styles.label}>Links das Fotos (Para o Carrossel)</Text>
@@ -153,30 +186,51 @@ export default function CadastrarEvento() {
         <TextInput style={styles.input} value={img3} onChangeText={setImg3} placeholderTextColor={styles.colors.placeholder} placeholder="URL da Foto 3" />
 
         <Text style={styles.label}>Data e Hora de Início</Text>
-        <View style={styles.dateTimeRow}>
-          <TouchableOpacity style={styles.dateTimeBtn} onPress={() => setShowPicker({show:true, mode:'date', target:'inicio'})}>
-            <Ionicons name="calendar" size={18} color="#007bff" />
-            <Text style={styles.dateTimeText}>{dataInicio.toLocaleDateString('pt-BR')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dateTimeBtn} onPress={() => setShowPicker({show:true, mode:'time', target:'inicio'})}>
-            <Ionicons name="time" size={18} color="#007bff" />
-            <Text style={styles.dateTimeText}>{dataInicio.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</Text>
-          </TouchableOpacity>
-        </View>
+        {Platform.OS === 'web' ? (
+          <TextInput 
+            style={[styles.input, { marginBottom: 15 }]} 
+            value={dataInicioTexto} 
+            onChangeText={setDataInicioTexto} 
+            placeholder="DD/MM/AAAA HH:MM" 
+            placeholderTextColor={styles.colors.placeholder} 
+          />
+        ) : (
+          <View style={styles.dateTimeRow}>
+            <TouchableOpacity style={styles.dateTimeBtn} onPress={() => setShowPicker({show:true, mode:'date', target:'inicio'})}>
+              <Ionicons name="calendar" size={18} color="#007bff" />
+              <Text style={styles.dateTimeText}>{dataInicio.toLocaleDateString('pt-BR')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.dateTimeBtn} onPress={() => setShowPicker({show:true, mode:'time', target:'inicio'})}>
+              <Ionicons name="time" size={18} color="#007bff" />
+              <Text style={styles.dateTimeText}>{dataInicio.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <Text style={styles.label}>Data e Hora de Término</Text>
-        <View style={styles.dateTimeRow}>
-          <TouchableOpacity style={styles.dateTimeBtn} onPress={() => setShowPicker({show:true, mode:'date', target:'termino'})}>
-            <Ionicons name="calendar" size={18} color="#007bff" />
-            <Text style={styles.dateTimeText}>{dataTermino.toLocaleDateString('pt-BR')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dateTimeBtn} onPress={() => setShowPicker({show:true, mode:'time', target:'termino'})}>
-            <Ionicons name="time" size={18} color="#007bff" />
-            <Text style={styles.dateTimeText}>{dataTermino.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</Text>
-          </TouchableOpacity>
-        </View>
+        {Platform.OS === 'web' ? (
+          <TextInput 
+            style={[styles.input, { marginBottom: 15 }]} 
+            value={dataTerminoTexto} 
+            onChangeText={setDataTerminoTexto} 
+            placeholder="DD/MM/AAAA HH:MM" 
+            placeholderTextColor={styles.colors.placeholder} 
+          />
+        ) : (
+          <View style={styles.dateTimeRow}>
+            <TouchableOpacity style={styles.dateTimeBtn} onPress={() => setShowPicker({show:true, mode:'date', target:'termino'})}>
+              <Ionicons name="calendar" size={18} color="#007bff" />
+              <Text style={styles.dateTimeText}>{dataTermino.toLocaleDateString('pt-BR')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.dateTimeBtn} onPress={() => setShowPicker({show:true, mode:'time', target:'termino'})}>
+              <Ionicons name="time" size={18} color="#007bff" />
+              <Text style={styles.dateTimeText}>{dataTermino.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-        {showPicker.show && (
+        {/* Picker só carrega se não estivermos na Web para evitar erros */}
+        {showPicker.show && Platform.OS !== 'web' && (
           <DateTimePicker value={showPicker.target === 'inicio' ? dataInicio : dataTermino} mode={showPicker.mode} is24Hour={true} onChange={onChangePicker} />
         )}
 
@@ -195,37 +249,14 @@ export default function CadastrarEvento() {
         <Text style={styles.label}>Descrição</Text>
         <TextInput style={[styles.input, styles.textArea]} value={descricao} onChangeText={setDescricao} multiline placeholderTextColor={styles.colors.placeholder} placeholder="Detalhes..." />
 
-        {/* CAMPOS MANUAIS PARA A WEB */}
         <Text style={styles.label}>Coordenadas (Lat / Lng)</Text>
-        <Text style={{fontSize: 12, color: '#666', marginBottom: 5}}>
-          Na Web, cole as coordenadas aqui. No celular, toque no mapa.
-        </Text>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
-          <TextInput
-            style={[styles.input, { flex: 1, marginRight: 5, marginBottom: 0 }]}
-            value={String(coordenadas.latitude)}
-            onChangeText={(text) => setCoordenadas({...coordenadas, latitude: parseFloat(text) || 0})}
-            keyboardType="numeric"
-            placeholder="Latitude"
-            placeholderTextColor={styles.colors.placeholder}
-          />
-          <TextInput
-            style={[styles.input, { flex: 1, marginLeft: 5, marginBottom: 0 }]}
-            value={String(coordenadas.longitude)}
-            onChangeText={(text) => setCoordenadas({...coordenadas, longitude: parseFloat(text) || 0})}
-            keyboardType="numeric"
-            placeholder="Longitude"
-            placeholderTextColor={styles.colors.placeholder}
-          />
+          <TextInput style={[styles.input, { flex: 1, marginRight: 5, marginBottom: 0 }]} value={String(coordenadas.latitude)} onChangeText={(text) => setCoordenadas({...coordenadas, latitude: parseFloat(text) || 0})} keyboardType="numeric" placeholder="Latitude" placeholderTextColor={styles.colors.placeholder} />
+          <TextInput style={[styles.input, { flex: 1, marginLeft: 5, marginBottom: 0 }]} value={String(coordenadas.longitude)} onChangeText={(text) => setCoordenadas({...coordenadas, longitude: parseFloat(text) || 0})} keyboardType="numeric" placeholder="Longitude" placeholderTextColor={styles.colors.placeholder} />
         </View>
 
-        {/* MAPA ABSTRAÍDO E PROTEGIDO CONTRA ERROS NA WEB */}
         <View style={styles.mapContainer}>
-          <MapaCustomizado 
-            coordenadas={coordenadas} 
-            setCoordenadas={setCoordenadas} 
-            isDark={isDark} 
-          />
+          <MapaCustomizado coordenadas={coordenadas} setCoordenadas={setCoordenadas} isDark={isDark} />
         </View>
 
         <View style={styles.buttonArea}>

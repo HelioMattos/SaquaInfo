@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router'; // <-- Importamos o roteador do Expo
 import { collection, getDocs } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
@@ -6,6 +7,7 @@ import { db } from '../firebaseConfig';
 export default function MapaExploreWeb() {
   const [eventos, setEventos] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const router = useRouter(); // <-- Ativamos o roteador
 
   useEffect(() => {
     const buscarEventosWeb = async () => {
@@ -24,6 +26,18 @@ export default function MapaExploreWeb() {
     };
 
     buscarEventosWeb();
+
+    // ESCUTA O "SUSSURRO" DO MAPA PARA FAZER A NAVEGAÇÃO
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'NAVIGATE_EVENT') {
+        // Usa o Expo Router para navegar de forma suave sem erro 404
+        router.push(`/evento/${event.data.id}` as any);
+      }
+    };
+    
+    // Liga o ouvido do aplicativo
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   if (carregando) {
@@ -35,7 +49,7 @@ export default function MapaExploreWeb() {
     );
   }
 
-  // Converte a lista de eventos do Firebase em marcadores de JavaScript para o Leaflet
+  // Trocamos a tag <a> por um <button> que envia a mensagem para o aplicativo
   const marcadoresJs = eventos
     .filter(e => e.latitude && e.longitude)
     .map(e => `
@@ -45,12 +59,16 @@ export default function MapaExploreWeb() {
           <div style="font-family: sans-serif; text-align: center; padding: 5px;">
             <h4 style="margin: 0 0 5px 0; color: #333;">${e.titulo}</h4>
             <p style="margin: 0 0 10px 0; font-size: 12px; color: #666;">${e.local}</p>
-            <a href="/evento/${e.id}" target="_top" style="display: inline-block; background: #007bff; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold;">Ver Detalhes</a>
+            <button 
+              onclick="window.parent.postMessage({ type: 'NAVIGATE_EVENT', id: '${e.id}' }, '*')" 
+              style="border: none; cursor: pointer; display: inline-block; background: #007bff; color: white; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; width: 100%;"
+            >
+              Ver Detalhes
+            </button>
           </div>
         \`);
     `).join('\n');
 
-  // Estrutura HTML/JS do Leaflet (OpenStreetMap) totalmente gratuita
   const conteudoHtml = `
     <!DOCTYPE html>
     <html>
@@ -67,14 +85,12 @@ export default function MapaExploreWeb() {
     <body>
       <div id="map"></div>
       <script>
-        // Inicializa o mapa focado em Saquarema
         var map = L.map('map').setView([-22.9251, -42.4862], 13);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // Injeta os marcadores vindos do Firestore
         ${marcadoresJs}
       </script>
     </body>
@@ -85,10 +101,8 @@ export default function MapaExploreWeb() {
     <View style={styles.container}>
       <iframe
         srcDoc={conteudoHtml}
-        width="100%"
-        height="100%"
-        style={{ border: 0 }}
-        title="Mapa De Eventos"
+        style={{ border: 0, width: '100%', height: '100vh', flex: 1 }}
+        title="Mapa de Eventos"
       />
     </View>
   );

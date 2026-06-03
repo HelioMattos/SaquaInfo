@@ -88,7 +88,7 @@ export default function MapaExploreWeb() {
         width="100%"
         height="100%"
         style={{ border: 0 }}
-        title="Mapa de Eventos"
+        title="Mapa De Eventos"
       />
     </View>
   );

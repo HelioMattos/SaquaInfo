@@ -58,7 +58,7 @@ export default function MapaExplore() {
               >
                 <Callout 
                   tooltip={false} 
-                  onPress={() => router.push(`/evento/${evento.id}` as any)}
+                  onPress={() => router.push({ pathname: '/modal', params: evento } as any)}
                 >
                   <View style={styles.balao}>
                     <Text style={styles.tituloBalao}>{evento.titulo}</Text>

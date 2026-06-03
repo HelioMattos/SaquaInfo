@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router'; // <-- Importamos o roteador do Expo
+import { useRouter } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
@@ -7,8 +7,9 @@ import { db } from '../firebaseConfig';
 export default function MapaExploreWeb() {
   const [eventos, setEventos] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const router = useRouter(); // <-- Ativamos o roteador
+  const router = useRouter();
 
+  // 1. Busca os eventos no Firebase
   useEffect(() => {
     const buscarEventosWeb = async () => {
       try {
@@ -26,19 +27,29 @@ export default function MapaExploreWeb() {
     };
 
     buscarEventosWeb();
+  }, []);
 
-    // ESCUTA O "SUSSURRO" DO MAPA PARA FAZER A NAVEGAÇÃO
+  // 2. Escuta o clique do botão no mapa interativo
+  useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === 'NAVIGATE_EVENT') {
-        // Usa o Expo Router para navegar de forma suave sem erro 404
-        router.push(`/evento/${event.data.id}` as any);
+        // Encontra todos os dados do evento que foi clicado
+        const eventoClicado = eventos.find(e => e.id === event.data.id);
+        
+        if (eventoClicado) {
+          // Vai para a tela /modal e envia todos os dados (id, titulo, lat, lng...) 
+          // exatamente como o seu link funciona!
+          router.push({
+            pathname: '/modal',
+            params: eventoClicado
+          } as any);
+        }
       }
     };
     
-    // Liga o ouvido do aplicativo
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [eventos]); // <-- Atualizado para sempre ter a lista de eventos mais recente
 
   if (carregando) {
     return (
@@ -49,7 +60,6 @@ export default function MapaExploreWeb() {
     );
   }
 
-  // Trocamos a tag <a> por um <button> que envia a mensagem para o aplicativo
   const marcadoresJs = eventos
     .filter(e => e.latitude && e.longitude)
     .map(e => `

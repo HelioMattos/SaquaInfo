@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { collection, doc, getDoc, onSnapshot, orderBy, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StatusBar, Text, TouchableOpacity, View } from 'react-native'; // <-- Adicionado o Image aqui
+import { FlatList, Image, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { auth, db } from '../../firebaseConfig';
 import { getIndexStyles } from '../../styles/index.styles';
@@ -17,7 +17,7 @@ interface Evento {
   longitude: number;
   dataInicio: string;
   dataTermino: string;
-  imagens?: string; // <-- Avisamos ao TypeScript que o evento pode ter imagens
+  imagens?: string;
 }
 
 export default function HomeScreen() {
@@ -83,28 +83,34 @@ export default function HomeScreen() {
         contentContainerStyle={{ padding: 15 }}
         renderItem={({ item }) => {
           
-          // LÓGICA DA IMAGEM DE CAPA: Pega a primeira foto da lista. Se não tiver, usa uma cinza.
           const fotoCapa = item.imagens 
             ? item.imagens.split(',')[0].trim() 
             : 'https://via.placeholder.com/400x200.png?text=Sem+Foto';
 
           return (
             <TouchableOpacity 
-              // Adicionamos 'padding: 0' e 'overflow: hidden' para a imagem colar nas bordas do cartão
-              style={[styles.card, { padding: 0, overflow: 'hidden', marginBottom: 20 }]} 
+              style={[
+                styles.card, 
+                { 
+                  padding: 0, 
+                  overflow: 'hidden', 
+                  marginBottom: 20,
+                  flexDirection: 'column', // <-- ISSO TRAZ O TEXTO DE VOLTA PARA BAIXO DA FOTO
+                  height: 'auto',          // <-- ISSO DEIXA O CARTÃO CRESCER
+                  alignItems: 'stretch'    // <-- ISSO GARANTE QUE O TEXTO NÃO FIQUE ESPREMIDO
+                }
+              ]} 
               onPress={() => router.push({ 
                 pathname: '/modal', 
                 params: { ...item, lat: item.latitude.toString(), lng: item.longitude.toString() }
               })}
             >
-              {/* IMAGEM DE CAPA */}
               <Image 
                 source={{ uri: fotoCapa }}
                 style={{ width: '100%', height: 160, backgroundColor: '#f0f0f0' }}
                 resizeMode="cover"
               />
 
-              {/* INFORMAÇÕES DO EVENTO */}
               <View style={[styles.cardInfo, { padding: 15, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardTitulo}>{item.titulo}</Text>

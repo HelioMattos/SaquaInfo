@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { deleteDoc, doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { Alert, Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, Image, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native'; // <-- Adicionado o Linking aqui
 import { useTheme } from '../context/ThemeContext';
 import { auth, db } from '../firebaseConfig';
 import { getModalStyles } from '../styles/modal.styles';
@@ -33,6 +33,20 @@ export default function ModalScreen() {
     }
   };
 
+  // --- NOVA FUNÇÃO DE COMPARTILHAR NO WHATSAPP ---
+  const handleShareWhatsApp = () => {
+    // Monta a mensagem que vai aparecer pronta lá no WhatsApp
+    const mensagem = `Confira este evento no *SaquaInfo*! 🌊\n\n🎉 *${params.titulo}*\n📍 *Local:* ${params.local}\n📅 *Quando:* ${formatarDataHora(params.dataInicio as string)}\n\nBora?`;
+    
+    // Converte os espaços e quebras de linha para o formato da internet
+    const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+    
+    // Tenta abrir o link
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Erro', 'Não foi possível abrir o WhatsApp.');
+    });
+  };
+
   useEffect(() => {
     const verificarPermissao = async () => {
       const user = auth.currentUser;
@@ -58,6 +72,7 @@ export default function ModalScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Detalhes do Evento</Text>
         <View style={styles.actionButtons}>
+          
           {isAdmin && (
             <>
               <TouchableOpacity style={styles.iconBtn} onPress={() => router.push({ pathname: '/cadastrar', params: { ...params } })}>
@@ -83,7 +98,6 @@ export default function ModalScreen() {
         
         {/* ================= INÍCIO DO CARROSSEL ================= */}
         {listaFotos.length > 0 && (
-          // Fundo preto e altura de 350 para dar destaque à foto
           <View style={{ height: 350, marginBottom: 20, borderRadius: 12, overflow: 'hidden', backgroundColor: '#000' }}>
             <ScrollView 
               horizontal 
@@ -95,7 +109,7 @@ export default function ModalScreen() {
                   key={index}
                   source={{ uri: foto }} 
                   style={{ width: width - 40, height: 350 }} 
-                  resizeMode="contain" // <-- SEGREDO: Garante que a foto não seja cortada!
+                  resizeMode="contain" 
                 />
               ))}
             </ScrollView>
@@ -149,6 +163,28 @@ export default function ModalScreen() {
           <Text style={styles.labelVerde}>Sobre o evento</Text>
           <Text style={styles.descricaoText}>{params.descricao || "Nenhuma descrição detalhada fornecida."}</Text>
         </View>
+
+        {/* ================= BOTÃO DO WHATSAPP ================= */}
+        <TouchableOpacity 
+          style={{
+            flexDirection: 'row', 
+            backgroundColor: '#25D366', // Cor oficial do WhatsApp
+            padding: 16, 
+            borderRadius: 12, 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            marginBottom: 25,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 3,
+            elevation: 3
+          }} 
+          onPress={handleShareWhatsApp}
+        >
+          <Ionicons name="logo-whatsapp" size={24} color="#fff" style={{ marginRight: 10 }} />
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Compartilhar com Amigos</Text>
+        </TouchableOpacity>
 
         <MapaModal 
           latitude={latitude} 

@@ -17,6 +17,30 @@ const hoje = new Date();
 const dataLocalDefault = `${hoje.getFullYear()}-${pad(hoje.getMonth() + 1)}-${pad(hoje.getDate())}`;
 const horaLocalDefault = `${pad(hoje.getHours())}:${pad(hoje.getMinutes())}`;
 
+// COMPONENTE MÁGICO: Força o navegador a mostrar o calendário HTML5 real!
+const InputNativoWeb = ({ tipo, valor, setValor, isDark }: any) => {
+  if (Platform.OS === 'web') {
+    return React.createElement('input', {
+      type: tipo,
+      value: valor,
+      onChange: (e: any) => setValor(e.target.value),
+      style: {
+        padding: '12px',
+        backgroundColor: isDark ? '#333' : '#f5f5f5',
+        color: isDark ? '#fff' : '#333',
+        border: 'none',
+        borderRadius: '8px',
+        fontSize: '14px',
+        width: '100%',
+        boxSizing: 'border-box',
+        outline: 'none',
+        fontFamily: 'inherit'
+      }
+    });
+  }
+  return null;
+};
+
 export default function CadastrarEvento() {
   const { isDark } = useTheme();
   const styles = getCadastrarStyles(isDark);
@@ -35,7 +59,7 @@ export default function CadastrarEvento() {
   const [img2, setImg2] = useState('');
   const [img3, setImg3] = useState('');
 
-  // 📱 Estados nativos para o Telemóvel (Celular)
+  // 📱 Estados nativos para o Telemóvel
   const [dataInicio, setDataInicio] = useState(new Date());
   const [dataTermino, setDataTermino] = useState(new Date());
   const [showPicker, setShowPicker] = useState<{show: boolean, mode: 'date' | 'time', target: 'inicio' | 'termino'}>({
@@ -74,7 +98,6 @@ export default function CadastrarEvento() {
       setCategoria((params.categoria as string) || 'Outros');
       setCoordenadas({ latitude: parseFloat(params.lat as string), longitude: parseFloat(params.lng as string) });
       
-      // Ao carregar para edição, separamos a data para preencher os calendários da web certinho
       if (params.dataInicio) {
         const d = new Date(params.dataInicio as string);
         setDataInicio(d);
@@ -119,7 +142,6 @@ export default function CadastrarEvento() {
 
     if (Platform.OS === 'web') {
       try {
-        // Junta a data e a hora do calendário web de volta num objeto pro Firebase
         const [anoI, mesI, diaI] = dataInicioWeb.split('-');
         const [horaI, minI] = horaInicioWeb.split(':');
         isoInicio = new Date(Number(anoI), Number(mesI) - 1, Number(diaI), Number(horaI), Number(minI)).toISOString();
@@ -190,18 +212,12 @@ export default function CadastrarEvento() {
         <Text style={styles.label}>Data e Hora de Início</Text>
         {Platform.OS === 'web' ? (
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
-            <TextInput 
-              style={[styles.input, { flex: 2, marginRight: 5, marginBottom: 0 }]} 
-              value={dataInicioWeb} 
-              onChangeText={setDataInicioWeb} 
-              {...{ type: 'date' } as any} // Aciona o Calendário do Navegador
-            />
-            <TextInput 
-              style={[styles.input, { flex: 1, marginLeft: 5, marginBottom: 0 }]} 
-              value={horaInicioWeb} 
-              onChangeText={setHoraInicioWeb} 
-              {...{ type: 'time' } as any} // Aciona o Relógio do Navegador
-            />
+            <View style={{ flex: 2, marginRight: 5 }}>
+              <InputNativoWeb tipo="date" valor={dataInicioWeb} setValor={setDataInicioWeb} isDark={isDark} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 5 }}>
+              <InputNativoWeb tipo="time" valor={horaInicioWeb} setValor={setHoraInicioWeb} isDark={isDark} />
+            </View>
           </View>
         ) : (
           <View style={styles.dateTimeRow}>
@@ -219,18 +235,12 @@ export default function CadastrarEvento() {
         <Text style={styles.label}>Data e Hora de Término</Text>
         {Platform.OS === 'web' ? (
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
-            <TextInput 
-              style={[styles.input, { flex: 2, marginRight: 5, marginBottom: 0 }]} 
-              value={dataTerminoWeb} 
-              onChangeText={setDataTerminoWeb} 
-              {...{ type: 'date' } as any} 
-            />
-            <TextInput 
-              style={[styles.input, { flex: 1, marginLeft: 5, marginBottom: 0 }]} 
-              value={horaTerminoWeb} 
-              onChangeText={setHoraTerminoWeb} 
-              {...{ type: 'time' } as any} 
-            />
+            <View style={{ flex: 2, marginRight: 5 }}>
+              <InputNativoWeb tipo="date" valor={dataTerminoWeb} setValor={setDataTerminoWeb} isDark={isDark} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 5 }}>
+              <InputNativoWeb tipo="time" valor={horaTerminoWeb} setValor={setHoraTerminoWeb} isDark={isDark} />
+            </View>
           </View>
         ) : (
           <View style={styles.dateTimeRow}>

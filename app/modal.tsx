@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { deleteDoc, doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native'; // <-- Adicionado Image e Dimensions
 import { useTheme } from '../context/ThemeContext';
 import { auth, db } from '../firebaseConfig';
 import { getModalStyles } from '../styles/modal.styles';
@@ -10,12 +10,20 @@ import { getModalStyles } from '../styles/modal.styles';
 // Importação do mapa blindado para o Modal
 import MapaModal from '../components/MapaModal';
 
+// Pega a largura da tela para o carrossel "travar" na imagem certa
+const { width } = Dimensions.get('window');
+
 export default function ModalScreen() {
   const { isDark } = useTheme();
   const styles = getModalStyles(isDark);
   const router = useRouter();
   const params = useLocalSearchParams();
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Transforma a linha de texto do banco ("foto1.jpg, foto2.jpg") em uma lista de verdade
+  const listaFotos = params.imagens 
+    ? (params.imagens as string).split(',').map(url => url.trim()).filter(url => url !== '') 
+    : [];
 
   const formatarDataHora = (dataString: any) => {
     if (!dataString) return 'Não informada';
@@ -75,6 +83,41 @@ export default function ModalScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        
+        {/* ================= INÍCIO DO CARROSSEL ================= */}
+        {listaFotos.length > 0 && (
+          <View style={{ height: 250, marginBottom: 20, borderRadius: 12, overflow: 'hidden' }}>
+            <ScrollView 
+              horizontal 
+              pagingEnabled // Faz a rolagem travar de 1 em 1 foto
+              showsHorizontalScrollIndicator={false}
+            >
+              {listaFotos.map((foto, index) => (
+                <Image 
+                  key={index}
+                  source={{ uri: foto }} 
+                  // Subtrai 30/40 para compensar o padding (espaçamento lateral) do seu modal.styles
+                  style={{ width: width - 40, height: 250 }} 
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+            
+            {/* Se tiver mais de 1 foto, mostra um aviso para arrastar */}
+            {listaFotos.length > 1 && (
+              <View style={{
+                position: 'absolute', bottom: 10, right: 10,
+                backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15
+              }}>
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>
+                  Arraste para ver mais ({listaFotos.length})
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+        {/* ================= FIM DO CARROSSEL ================= */}
+
         <View style={styles.rowInfo}>
           <Text style={styles.tituloText}>{params.titulo}</Text>
           <View style={styles.tag}>
@@ -111,7 +154,6 @@ export default function ModalScreen() {
           <Text style={styles.descricaoText}>{params.descricao || "Nenhuma descrição detalhada fornecida."}</Text>
         </View>
 
-        {/* COMPONENTE DO MAPA SUBSTITUÍDO AQUI */}
         <MapaModal 
           latitude={latitude} 
           longitude={longitude} 

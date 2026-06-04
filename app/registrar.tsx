@@ -1,23 +1,57 @@
 import { useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext'; // Importando o tema
 import { auth } from '../firebaseConfig';
 
 export default function Registrar() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [carregando, setCarregando] = useState(false); // Adicionamos estado de carregamento
   const router = useRouter();
   const { isDark } = useTheme(); // Pegando o estado do tema
 
   const handleRegistro = async () => {
+    // 1. Validações antes de enviar para o banco
+    if (!email || !senha) {
+      if (Platform.OS === 'web') window.alert('Atenção: Preencha e-mail e senha!');
+      else Alert.alert('Atenção', 'Preencha e-mail e senha!');
+      return;
+    }
+
+    if (senha.length < 6) {
+      if (Platform.OS === 'web') window.alert('Atenção: A senha deve ter pelo menos 6 caracteres.');
+      else Alert.alert('Atenção', 'A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    setCarregando(true);
+
     try {
-      await createUserWithEmailAndPassword(auth, email, senha);
-      Alert.alert('Sucesso', 'Conta criada!');
-      router.replace('/login');
+      // Tenta criar a conta removendo espaços em branco do e-mail
+      await createUserWithEmailAndPassword(auth, email.trim(), senha);
+      
+      if (Platform.OS === 'web') window.alert('Sucesso: Conta criada com sucesso!');
+      else Alert.alert('Sucesso', 'Conta criada!');
+      
+      // Volta para a tela de login
+      router.replace('/'); 
     } catch (error: any) {
-      Alert.alert('Erro', 'Falha ao registrar');
+      console.error("Erro no Firebase:", error);
+      
+      // Traduz o erro do Firebase para algo fácil de entender
+      let mensagemErro = "Falha ao registrar.";
+      if (error.code === 'auth/email-already-in-use') {
+        mensagemErro = "Este e-mail já está cadastrado.";
+      } else if (error.code === 'auth/invalid-email') {
+        mensagemErro = "O formato do e-mail é inválido.";
+      }
+
+      if (Platform.OS === 'web') window.alert('Erro: ' + mensagemErro);
+      else Alert.alert('Erro', mensagemErro);
+    } finally {
+      setCarregando(false);
     }
   };
 
@@ -35,10 +69,11 @@ export default function Registrar() {
           }
         ]} 
         placeholder="E-mail" 
-        placeholderTextColor={isDark ? '#888' : '#bbb'} // Cor do texto de ajuda corrigida
+        placeholderTextColor={isDark ? '#888' : '#bbb'} 
         value={email} 
         onChangeText={setEmail} 
-        autoCapitalize="none" 
+        autoCapitalize="none"
+        keyboardType="email-address" 
       />
 
       <TextInput 
@@ -50,18 +85,26 @@ export default function Registrar() {
             borderColor: isDark ? '#333' : '#ddd' 
           }
         ]} 
-        placeholder="Senha" 
-        placeholderTextColor={isDark ? '#888' : '#bbb'} // Cor do texto de ajuda corrigida
+        placeholder="Senha (mínimo 6 caracteres)" 
+        placeholderTextColor={isDark ? '#888' : '#bbb'} 
         value={senha} 
         onChangeText={setSenha} 
         secureTextEntry 
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleRegistro}>
-        <Text style={styles.buttonText}>CADASTRAR</Text>
+      <TouchableOpacity 
+        style={[styles.button, carregando && { backgroundColor: '#6c757d' }]} 
+        onPress={handleRegistro}
+        disabled={carregando}
+      >
+        {carregando ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>CADASTRAR</Text>
+        )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+      <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }} disabled={carregando}>
         <Text style={[styles.link, { color: '#007bff' }]}>Voltar para Login</Text>
       </TouchableOpacity>
     </View>

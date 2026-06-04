@@ -11,11 +11,11 @@ import { getCadastrarStyles } from '../styles/cadastrar.styles';
 // Importação do mapa que se adapta sozinho para Web ou App
 import MapaCustomizado from '../components/MapaCustomizado';
 
-// Função auxiliar para formatar a data inicial na caixa de texto da Web
-const formatarDataInput = (d: Date) => {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
+// Funções auxiliares para padronizar a data/hora inicial do navegador
+const pad = (n: number) => n.toString().padStart(2, '0');
+const hoje = new Date();
+const dataLocalDefault = `${hoje.getFullYear()}-${pad(hoje.getMonth() + 1)}-${pad(hoje.getDate())}`;
+const horaLocalDefault = `${pad(hoje.getHours())}:${pad(hoje.getMinutes())}`;
 
 export default function CadastrarEvento() {
   const { isDark } = useTheme();
@@ -35,16 +35,18 @@ export default function CadastrarEvento() {
   const [img2, setImg2] = useState('');
   const [img3, setImg3] = useState('');
 
-  // Estados nativos para o Telemóvel
+  // 📱 Estados nativos para o Telemóvel (Celular)
   const [dataInicio, setDataInicio] = useState(new Date());
   const [dataTermino, setDataTermino] = useState(new Date());
   const [showPicker, setShowPicker] = useState<{show: boolean, mode: 'date' | 'time', target: 'inicio' | 'termino'}>({
     show: false, mode: 'date', target: 'inicio'
   });
 
-  // Estados em texto exclusivos para a Web
-  const [dataInicioTexto, setDataInicioTexto] = useState(formatarDataInput(new Date()));
-  const [dataTerminoTexto, setDataTerminoTexto] = useState(formatarDataInput(new Date()));
+  // 💻 Estados para ativar os Calendários/Relógios Nativos da Web
+  const [dataInicioWeb, setDataInicioWeb] = useState(dataLocalDefault);
+  const [horaInicioWeb, setHoraInicioWeb] = useState(horaLocalDefault);
+  const [dataTerminoWeb, setDataTerminoWeb] = useState(dataLocalDefault);
+  const [horaTerminoWeb, setHoraTerminoWeb] = useState(horaLocalDefault);
 
   const categorias = [
     { id: 'Esportes', icon: 'fitness' },
@@ -72,16 +74,18 @@ export default function CadastrarEvento() {
       setCategoria((params.categoria as string) || 'Outros');
       setCoordenadas({ latitude: parseFloat(params.lat as string), longitude: parseFloat(params.lng as string) });
       
-      // Ao carregar para edição, ajustamos tanto a data nativa quanto o texto da web
+      // Ao carregar para edição, separamos a data para preencher os calendários da web certinho
       if (params.dataInicio) {
         const d = new Date(params.dataInicio as string);
         setDataInicio(d);
-        setDataInicioTexto(formatarDataInput(d));
+        setDataInicioWeb(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+        setHoraInicioWeb(`${pad(d.getHours())}:${pad(d.getMinutes())}`);
       }
       if (params.dataTermino) {
         const d = new Date(params.dataTermino as string);
         setDataTermino(d);
-        setDataTerminoTexto(formatarDataInput(d));
+        setDataTerminoWeb(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+        setHoraTerminoWeb(`${pad(d.getHours())}:${pad(d.getMinutes())}`);
       }
 
       if (params.imagens) {
@@ -110,23 +114,21 @@ export default function CadastrarEvento() {
     
     setCarregando(true);
 
-    // Preparar as datas dependendo de onde o usuário está
     let isoInicio = dataInicio.toISOString();
     let isoTermino = dataTermino.toISOString();
 
     if (Platform.OS === 'web') {
       try {
-        // Converte o texto "31/05/2026 15:00" de volta para o padrão de banco de dados
-        const parseDataBr = (str: string) => {
-          const [data, hora] = str.split(' ');
-          const [dia, mes, ano] = data.split('/');
-          const [h, m] = hora.split(':');
-          return new Date(Number(ano), Number(mes) - 1, Number(dia), Number(h), Number(m)).toISOString();
-        };
-        isoInicio = parseDataBr(dataInicioTexto);
-        isoTermino = parseDataBr(dataTerminoTexto);
+        // Junta a data e a hora do calendário web de volta num objeto pro Firebase
+        const [anoI, mesI, diaI] = dataInicioWeb.split('-');
+        const [horaI, minI] = horaInicioWeb.split(':');
+        isoInicio = new Date(Number(anoI), Number(mesI) - 1, Number(diaI), Number(horaI), Number(minI)).toISOString();
+
+        const [anoT, mesT, diaT] = dataTerminoWeb.split('-');
+        const [horaT, minT] = horaTerminoWeb.split(':');
+        isoTermino = new Date(Number(anoT), Number(mesT) - 1, Number(diaT), Number(horaT), Number(minT)).toISOString();
       } catch (e) {
-        window.alert("Formato de data inválido. Use o padrão DD/MM/AAAA HH:MM");
+        window.alert("Por favor, selecione uma data e hora válidas.");
         setCarregando(false);
         return;
       }
@@ -187,13 +189,20 @@ export default function CadastrarEvento() {
 
         <Text style={styles.label}>Data e Hora de Início</Text>
         {Platform.OS === 'web' ? (
-          <TextInput 
-            style={[styles.input, { marginBottom: 15 }]} 
-            value={dataInicioTexto} 
-            onChangeText={setDataInicioTexto} 
-            placeholder="DD/MM/AAAA HH:MM" 
-            placeholderTextColor={styles.colors.placeholder} 
-          />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+            <TextInput 
+              style={[styles.input, { flex: 2, marginRight: 5, marginBottom: 0 }]} 
+              value={dataInicioWeb} 
+              onChangeText={setDataInicioWeb} 
+              {...{ type: 'date' } as any} // Aciona o Calendário do Navegador
+            />
+            <TextInput 
+              style={[styles.input, { flex: 1, marginLeft: 5, marginBottom: 0 }]} 
+              value={horaInicioWeb} 
+              onChangeText={setHoraInicioWeb} 
+              {...{ type: 'time' } as any} // Aciona o Relógio do Navegador
+            />
+          </View>
         ) : (
           <View style={styles.dateTimeRow}>
             <TouchableOpacity style={styles.dateTimeBtn} onPress={() => setShowPicker({show:true, mode:'date', target:'inicio'})}>
@@ -209,13 +218,20 @@ export default function CadastrarEvento() {
 
         <Text style={styles.label}>Data e Hora de Término</Text>
         {Platform.OS === 'web' ? (
-          <TextInput 
-            style={[styles.input, { marginBottom: 15 }]} 
-            value={dataTerminoTexto} 
-            onChangeText={setDataTerminoTexto} 
-            placeholder="DD/MM/AAAA HH:MM" 
-            placeholderTextColor={styles.colors.placeholder} 
-          />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+            <TextInput 
+              style={[styles.input, { flex: 2, marginRight: 5, marginBottom: 0 }]} 
+              value={dataTerminoWeb} 
+              onChangeText={setDataTerminoWeb} 
+              {...{ type: 'date' } as any} 
+            />
+            <TextInput 
+              style={[styles.input, { flex: 1, marginLeft: 5, marginBottom: 0 }]} 
+              value={horaTerminoWeb} 
+              onChangeText={setHoraTerminoWeb} 
+              {...{ type: 'time' } as any} 
+            />
+          </View>
         ) : (
           <View style={styles.dateTimeRow}>
             <TouchableOpacity style={styles.dateTimeBtn} onPress={() => setShowPicker({show:true, mode:'date', target:'termino'})}>
@@ -229,7 +245,6 @@ export default function CadastrarEvento() {
           </View>
         )}
 
-        {/* Picker só carrega se não estivermos na Web para evitar erros */}
         {showPicker.show && Platform.OS !== 'web' && (
           <DateTimePicker value={showPicker.target === 'inicio' ? dataInicio : dataTermino} mode={showPicker.mode} is24Hour={true} onChange={onChangePicker} />
         )}

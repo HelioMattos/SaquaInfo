@@ -2,15 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { deleteDoc, doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { Alert, Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native'; // <-- Adicionado Image e Dimensions
+import { Alert, Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { auth, db } from '../firebaseConfig';
 import { getModalStyles } from '../styles/modal.styles';
 
-// Importação do mapa blindado para o Modal
 import MapaModal from '../components/MapaModal';
 
-// Pega a largura da tela para o carrossel "travar" na imagem certa
 const { width } = Dimensions.get('window');
 
 export default function ModalScreen() {
@@ -20,7 +18,6 @@ export default function ModalScreen() {
   const params = useLocalSearchParams();
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Transforma a linha de texto do banco ("foto1.jpg, foto2.jpg") em uma lista de verdade
   const listaFotos = params.imagens 
     ? (params.imagens as string).split(',').map(url => url.trim()).filter(url => url !== '') 
     : [];
@@ -86,28 +83,27 @@ export default function ModalScreen() {
         
         {/* ================= INÍCIO DO CARROSSEL ================= */}
         {listaFotos.length > 0 && (
-          <View style={{ height: 250, marginBottom: 20, borderRadius: 12, overflow: 'hidden' }}>
+          // Fundo preto e altura de 350 para dar destaque à foto
+          <View style={{ height: 350, marginBottom: 20, borderRadius: 12, overflow: 'hidden', backgroundColor: '#000' }}>
             <ScrollView 
               horizontal 
-              pagingEnabled // Faz a rolagem travar de 1 em 1 foto
+              pagingEnabled 
               showsHorizontalScrollIndicator={false}
             >
               {listaFotos.map((foto, index) => (
                 <Image 
                   key={index}
                   source={{ uri: foto }} 
-                  // Subtrai 30/40 para compensar o padding (espaçamento lateral) do seu modal.styles
-                  style={{ width: width - 40, height: 250 }} 
-                  resizeMode="cover"
+                  style={{ width: width - 40, height: 350 }} 
+                  resizeMode="contain" // <-- SEGREDO: Garante que a foto não seja cortada!
                 />
               ))}
             </ScrollView>
             
-            {/* Se tiver mais de 1 foto, mostra um aviso para arrastar */}
             {listaFotos.length > 1 && (
               <View style={{
                 position: 'absolute', bottom: 10, right: 10,
-                backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15
+                backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15
               }}>
                 <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>
                   Arraste para ver mais ({listaFotos.length})

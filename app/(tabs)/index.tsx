@@ -62,11 +62,7 @@ export default function HomeScreen() {
         
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity onPress={toggleTheme} style={{ marginRight: 15 }}>
-            <Ionicons 
-              name={isDark ? "sunny" : "moon"} 
-              size={24} 
-              color={isDark ? "#ffcc00" : "#333"} 
-            />
+            <Ionicons name={isDark ? "sunny" : "moon"} size={24} color={isDark ? "#ffcc00" : "#333"} />
           </TouchableOpacity>
 
           {isAdmin && (
@@ -85,43 +81,34 @@ export default function HomeScreen() {
           
           const fotoCapa = item.imagens 
             ? item.imagens.split(',')[0].trim() 
-            : 'https://via.placeholder.com/400x200.png?text=Sem+Foto';
+            : 'https://via.placeholder.com/150x150.png?text=Sem+Foto';
 
           return (
             <TouchableOpacity 
-              style={[
-                styles.card, 
-                { 
-                  padding: 0, 
-                  overflow: 'hidden', 
-                  marginBottom: 20,
-                  flexDirection: 'column', // <-- ISSO TRAZ O TEXTO DE VOLTA PARA BAIXO DA FOTO
-                  height: 'auto',          // <-- ISSO DEIXA O CARTÃO CRESCER
-                  alignItems: 'stretch'    // <-- ISSO GARANTE QUE O TEXTO NÃO FIQUE ESPREMIDO
-                }
-              ]} 
+              // Estilo alterado para "row" (lado a lado)
+              style={[styles.card, { padding: 12, marginBottom: 15, flexDirection: 'row', alignItems: 'center' }]} 
               onPress={() => router.push({ 
                 pathname: '/modal', 
                 params: { ...item, lat: item.latitude.toString(), lng: item.longitude.toString() }
               })}
             >
+              {/* MINIATURA DA IMAGEM PEQUENA DO LADO ESQUERDO */}
               <Image 
                 source={{ uri: fotoCapa }}
-                style={{ width: '100%', height: 160, backgroundColor: '#f0f0f0' }}
+                style={{ width: 90, height: 90, borderRadius: 8, backgroundColor: '#f0f0f0' }}
                 resizeMode="cover"
               />
 
-              <View style={[styles.cardInfo, { padding: 15, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitulo}>{item.titulo}</Text>
-                  <Text style={{ color: '#28a745', fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
-                    {new Date(item.dataInicio).toLocaleDateString('pt-BR')}
-                  </Text>
-                  <Text style={{ color: styles.colors.subtexto, fontSize: 13, marginTop: 4 }}>📍 {item.local}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#007bff" />
+              {/* TEXTO DO LADO DIREITO */}
+              <View style={{ flex: 1, marginLeft: 15, justifyContent: 'center' }}>
+                <Text style={styles.cardTitulo}>{item.titulo}</Text>
+                <Text style={{ color: '#28a745', fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
+                  {new Date(item.dataInicio).toLocaleDateString('pt-BR')}
+                </Text>
+                <Text style={{ color: styles.colors.subtexto, fontSize: 13, marginTop: 4 }}>📍 {item.local}</Text>
               </View>
-
+              
+              <Ionicons name="chevron-forward" size={20} color="#007bff" />
             </TouchableOpacity>
           );
         }}

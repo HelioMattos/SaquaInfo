@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import React from 'react';
-import { Alert, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'; // <-- Adicionado o ScrollView aqui
 import { auth } from '../../firebaseConfig';
 
 export default function PerfilScreen() {
@@ -48,8 +48,11 @@ export default function PerfilScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+    // Trocamos a View fixa por um ScrollView que permite rolagem
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer} // Estilo interno da rolagem
+    >
         
         {/* Cabeçalho do Perfil */}
         <View style={styles.header}>
@@ -81,8 +84,7 @@ export default function PerfilScreen() {
           <Text style={styles.logoutText}>SAIR DA CONTA</Text>
         </TouchableOpacity>
 
-      </View>
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 
@@ -91,10 +93,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F2F2F7',
   },
-  content: {
-    flex: 1,
+  contentContainer: {
     padding: 20,
     alignItems: 'center',
+    // Esse paddingBottom 100 é mágico! Garante que o fundo não bata na barra de baixo.
+    paddingBottom: 100, 
   },
   header: {
     alignItems: 'center',
@@ -130,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 15,
     padding: 20,
-    marginBottom: 30,
+    marginBottom: 40, // Deixei um espaço um pouco maior antes do botão
     elevation: 2,
   },
   sectionTitle: {
@@ -159,8 +162,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 'auto', // Empurra o botão para o final da tela
-    marginBottom: 20,
   },
   logoutText: {
     color: '#fff',

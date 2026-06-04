@@ -1,23 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker'; // <-- Biblioteca de Câmera/Galeria
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { addDoc, collection, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'; // <-- Funções de Upload
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import MapaCustomizado from '../components/MapaCustomizado';
 import { useTheme } from '../context/ThemeContext';
-import { auth, db } from '../firebaseConfig';
+import { auth, db, storage } from '../firebaseConfig'; // <-- Importamos o storage
 import { getCadastrarStyles } from '../styles/cadastrar.styles';
 
-// Importação do mapa que se adapta sozinho para Web ou App
-import MapaCustomizado from '../components/MapaCustomizado';
-
-// Funções auxiliares para padronizar a data/hora inicial do navegador
 const pad = (n: number) => n.toString().padStart(2, '0');
 const hoje = new Date();
 const dataLocalDefault = `${hoje.getFullYear()}-${pad(hoje.getMonth() + 1)}-${pad(hoje.getDate())}`;
 const horaLocalDefault = `${pad(hoje.getHours())}:${pad(hoje.getMinutes())}`;
 
-// COMPONENTE MÁGICO: Força o navegador a mostrar o calendário HTML5 real!
 const InputNativoWeb = ({ tipo, valor, setValor, isDark }: any) => {
   if (Platform.OS === 'web') {
     return React.createElement('input', {
@@ -55,18 +53,17 @@ export default function CadastrarEvento() {
   const [carregando, setCarregando] = useState(false);
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
 
+  // Estados das imagens (agora guardam o caminho local do celular ou o link da web)
   const [img1, setImg1] = useState('');
   const [img2, setImg2] = useState('');
   const [img3, setImg3] = useState('');
 
-  // 📱 Estados nativos para o Telemóvel
   const [dataInicio, setDataInicio] = useState(new Date());
   const [dataTermino, setDataTermino] = useState(new Date());
   const [showPicker, setShowPicker] = useState<{show: boolean, mode: 'date' | 'time', target: 'inicio' | 'termino'}>({
     show: false, mode: 'date', target: 'inicio'
   });
 
-  // 💻 Estados para ativar os Calendários/Relógios Nativos da Web
   const [dataInicioWeb, setDataInicioWeb] = useState(dataLocalDefault);
   const [horaInicioWeb, setHoraInicioWeb] = useState(horaLocalDefault);
   const [dataTerminoWeb, setDataTerminoWeb] = useState(dataLocalDefault);
@@ -92,13 +89,11 @@ export default function CadastrarEvento() {
     verificarAcessoAdmin();
 
     if (params.id) {
-      // CORREÇÃO 1: Pega o título corretamente, não o ID!
       setTitulo(params.titulo as string || '');
       setLocal(params.local as string || '');
       setDescricao(params.descricao as string || '');
       setCategoria((params.categoria as string) || 'Outros');
       
-      // CORREÇÃO 2: Prevenção contra "NaN". Pega a coordenada seja como "lat" ou "latitude"
       const latSafe = parseFloat((params.latitude || params.lat) as string);
       const lngSafe = parseFloat((params.longitude || params.lng) as string);
       
@@ -137,10 +132,90 @@ export default function CadastrarEvento() {
     }
   };
 
+  // ==========================================
+  // FUNÇÕES DE CÂMERA E GALERIA
+  // ==========================================
+  const escolherImagem = async (setImagem: React.Dispatch<React.SetStateAction<string>>) => {
+    if (Platform.OS !== 'web') {
+      // Pergunta se o usuário quer Câmera ou Galeria no celular
+      Alert.alert(
+        "Adicionar Foto",
+        "Escolha de onde quer pegar a imagem:",
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Câmera", onPress: () => abrirCamera(setImagem) },
+          { text: "Galeria", onPress: () => abrirGaleria(setImagem) }
+        ]
+      );
+    } else {
+      // Na web, abre direto os arquivos do computador
+      abrirGaleria(setImagem);
+    }
+  };
+
+  const abrirGaleria = async (setImagem: React.Dispatch<React.SetStateAction<string>>) => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.6, // Comprime a foto para o app não ficar pesado
+    });
+
+    if (!result.canceled) {
+      setImagem(result.assets[0].uri);
+    }
+  };
+
+  const abrirCamera = async (setImagem: React.Dispatch<React.SetStateAction<string>>) => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Ops", "Precisamos da permissão da câmera para tirar a foto!");
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.6,
+    });
+
+    if (!result.canceled) {
+      setImagem(result.assets[0].uri);
+    }
+  };
+
+  // ==========================================
+  // FUNÇÃO DE UPLOAD PARA O FIREBASE
+  // ==========================================
+  const fazerUploadImagem = async (uri: string) => {
+    // Se o link já começar com HTTP (caso de edição de um evento antigo), não precisa fazer upload
+    if (!uri || uri.startsWith('http')) return uri;
+
+    try {
+      // Pega o arquivo do celular/pc e converte num formato que o Firebase aceita (Blob)
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      
+      // Cria um nome único para a foto
+      const nomeUnico = `evento_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+      const storageRef = ref(storage, `eventos/${nomeUnico}`);
+      
+      // Envia para o Firebase Storage
+      await uploadBytes(storageRef, blob);
+      
+      // Pega o link definitivo da foto na internet
+      const downloadURL = await getDownloadURL(storageRef);
+      return downloadURL;
+    } catch (error) {
+      console.error("Erro no upload da imagem:", error);
+      throw error;
+    }
+  };
+
   const handleSalvar = async () => {
     if (!titulo || !local || !descricao || !img1) {
-      if (Platform.OS === 'web') window.alert("Atenção: Preencha Título, Local, Descrição e ao menos a primeira Foto.");
-      else Alert.alert("Atenção", "Preencha Título, Local, Descrição e ao menos a primeira Foto.");
+      if (Platform.OS === 'web') window.alert("Atenção: Preencha Título, Local, Descrição e ao menos a PRIMEIRA foto.");
+      else Alert.alert("Atenção", "Preencha Título, Local, Descrição e ao menos a PRIMEIRA foto.");
       return;
     }
     
@@ -166,14 +241,20 @@ export default function CadastrarEvento() {
     }
 
     try {
-      const listaFotos = [img1, img2, img3].filter(url => url !== '').join(',');
+      // 1. FAZ O UPLOAD DAS FOTOS PRIMEIRO
+      const url1 = await fazerUploadImagem(img1);
+      const url2 = await fazerUploadImagem(img2);
+      const url3 = await fazerUploadImagem(img3);
+      
+      // Junta os links definitivos separados por vírgula
+      const listaFotos = [url1, url2, url3].filter(url => url !== '').join(',');
 
       const dados = { 
         titulo, 
         local, 
         descricao, 
         categoria, 
-        imagens: listaFotos,
+        imagens: listaFotos, // Salva os links definitivos
         dataInicio: isoInicio, 
         dataTermino: isoTermino, 
         latitude: coordenadas.latitude, 
@@ -181,6 +262,7 @@ export default function CadastrarEvento() {
         atualizadoEm: serverTimestamp() 
       };
 
+      // 2. SALVA OS DADOS DO EVENTO
       if (params.id) {
         await updateDoc(doc(db, "eventos", params.id as string), dados);
       } else {
@@ -193,12 +275,34 @@ export default function CadastrarEvento() {
       router.back();
 
     } catch (error) { 
-      if (Platform.OS === 'web') window.alert("Erro: Falha ao salvar o evento.");
+      if (Platform.OS === 'web') window.alert("Erro: Falha ao salvar o evento ou fotos.");
       else Alert.alert("Erro", "Falha ao salvar."); 
     } finally { 
       setCarregando(false); 
     }
   };
+
+  // Componente visual para as caixas de fotos
+  const CaixaFoto = ({ uri, setUri, numero }: any) => (
+    <TouchableOpacity 
+      style={{
+        flex: 1, height: 100, backgroundColor: isDark ? '#333' : '#f0f0f0', 
+        borderRadius: 10, marginHorizontal: 4, justifyContent: 'center', 
+        alignItems: 'center', overflow: 'hidden', borderWidth: 1, 
+        borderColor: isDark ? '#444' : '#ddd', borderStyle: 'dashed'
+      }}
+      onPress={() => escolherImagem(setUri)}
+    >
+      {uri ? (
+        <Image source={{ uri }} style={{ width: '100%', height: '100%' }} />
+      ) : (
+        <View style={{ alignItems: 'center' }}>
+          <Ionicons name="camera" size={24} color={isDark ? '#aaa' : '#888'} />
+          <Text style={{ fontSize: 10, color: isDark ? '#aaa' : '#888', marginTop: 4 }}>Foto {numero}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
 
   if (verificandoAcesso) return <ActivityIndicator style={{flex:1}} size="large" />;
 
@@ -213,10 +317,13 @@ export default function CadastrarEvento() {
         <Text style={styles.label}>Local</Text>
         <TextInput style={styles.input} value={local} onChangeText={setLocal} placeholderTextColor={styles.colors.placeholder} placeholder="Ex: Praia de Itaúna" />
 
-        <Text style={styles.label}>Links das Fotos (Para o Carrossel)</Text>
-        <TextInput style={[styles.input, {marginBottom: 5}]} value={img1} onChangeText={setImg1} placeholderTextColor={styles.colors.placeholder} placeholder="URL da Foto 1 (Obrigatória)" />
-        <TextInput style={[styles.input, {marginBottom: 5}]} value={img2} onChangeText={setImg2} placeholderTextColor={styles.colors.placeholder} placeholder="URL da Foto 2" />
-        <TextInput style={styles.input} value={img3} onChangeText={setImg3} placeholderTextColor={styles.colors.placeholder} placeholder="URL da Foto 3" />
+        {/* NOVA ÁREA DE UPLOAD DE FOTOS */}
+        <Text style={styles.label}>Fotos do Evento (Toque para adicionar)</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+          <CaixaFoto uri={img1} setUri={setImg1} numero="1" />
+          <CaixaFoto uri={img2} setUri={setImg2} numero="2" />
+          <CaixaFoto uri={img3} setUri={setImg3} numero="3" />
+        </View>
 
         <Text style={styles.label}>Data e Hora de Início</Text>
         {Platform.OS === 'web' ? (
@@ -295,7 +402,7 @@ export default function CadastrarEvento() {
 
         <View style={styles.buttonArea}>
           <TouchableOpacity style={styles.button} onPress={handleSalvar} disabled={carregando}>
-            <Text style={styles.buttonText}>{carregando ? "SALVANDO..." : "SALVAR EVENTO"}</Text>
+            <Text style={styles.buttonText}>{carregando ? "ENVIANDO FOTOS E SALVANDO..." : "SALVAR EVENTO"}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.buttonCancel} onPress={() => router.back()} disabled={carregando}>

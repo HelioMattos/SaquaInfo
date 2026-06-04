@@ -92,11 +92,20 @@ export default function CadastrarEvento() {
     verificarAcessoAdmin();
 
     if (params.id) {
-      setTitulo(params.id as string || '');
+      // CORREÇÃO 1: Pega o título corretamente, não o ID!
+      setTitulo(params.titulo as string || '');
       setLocal(params.local as string || '');
       setDescricao(params.descricao as string || '');
       setCategoria((params.categoria as string) || 'Outros');
-      setCoordenadas({ latitude: parseFloat(params.lat as string), longitude: parseFloat(params.lng as string) });
+      
+      // CORREÇÃO 2: Prevenção contra "NaN". Pega a coordenada seja como "lat" ou "latitude"
+      const latSafe = parseFloat((params.latitude || params.lat) as string);
+      const lngSafe = parseFloat((params.longitude || params.lng) as string);
+      
+      setCoordenadas({ 
+        latitude: isNaN(latSafe) ? -22.9251 : latSafe, 
+        longitude: isNaN(lngSafe) ? -42.4862 : lngSafe 
+      });
       
       if (params.dataInicio) {
         const d = new Date(params.dataInicio as string);

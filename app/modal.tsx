@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { deleteDoc, doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { Alert, Dimensions, Image, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native'; // <-- Adicionado o Linking aqui
+import { Alert, Dimensions, Image, Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native'; // <-- Platform adicionado aqui
 import { useTheme } from '../context/ThemeContext';
 import { auth, db } from '../firebaseConfig';
 import { getModalStyles } from '../styles/modal.styles';
@@ -33,17 +33,21 @@ export default function ModalScreen() {
     }
   };
 
-  // --- NOVA FUNÇÃO DE COMPARTILHAR NO WHATSAPP ---
+  // --- FUNÇÃO DE COMPARTILHAR NO WHATSAPP COM LINK DINÂMICO ---
   const handleShareWhatsApp = () => {
-    // Monta a mensagem que vai aparecer pronta lá no WhatsApp
-    const mensagem = `Confira este evento no *SaquaInfo*! 🌊\n\n🎉 *${params.titulo}*\n📍 *Local:* ${params.local}\n📅 *Quando:* ${formatarDataHora(params.dataInicio as string)}\n\nBora?`;
+    // Se estiver na Web, pega o link exato da página. Se for celular, usa o link padrão.
+    const linkSite = Platform.OS === 'web' ? window.location.href : 'https://saquainfo.vercel.app'; 
     
-    // Converte os espaços e quebras de linha para o formato da internet
+    // Monta a mensagem completa com o link no final
+    const mensagem = `Confira este evento no *SaquaInfo*! 🌊\n\n🎉 *${params.titulo}*\n📍 *Local:* ${params.local}\n📅 *Quando:* ${formatarDataHora(params.dataInicio as string)}\n\n🔗 *Veja todas as fotos e detalhes aqui:*\n${linkSite}`;
+    
+    // Converte para o formato da internet
     const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
     
     // Tenta abrir o link
     Linking.openURL(url).catch(() => {
-      Alert.alert('Erro', 'Não foi possível abrir o WhatsApp.');
+      if (Platform.OS === 'web') window.alert('Erro: Não foi possível abrir o WhatsApp.');
+      else Alert.alert('Erro', 'Não foi possível abrir o WhatsApp.');
     });
   };
 
@@ -96,7 +100,7 @@ export default function ModalScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         
-        {/* ================= INÍCIO DO CARROSSEL ================= */}
+        {/* ================= CARROSSEL DE IMAGENS ================= */}
         {listaFotos.length > 0 && (
           <View style={{ height: 350, marginBottom: 20, borderRadius: 12, overflow: 'hidden', backgroundColor: '#000' }}>
             <ScrollView 
@@ -126,7 +130,6 @@ export default function ModalScreen() {
             )}
           </View>
         )}
-        {/* ================= FIM DO CARROSSEL ================= */}
 
         <View style={styles.rowInfo}>
           <Text style={styles.tituloText}>{params.titulo}</Text>
@@ -168,7 +171,7 @@ export default function ModalScreen() {
         <TouchableOpacity 
           style={{
             flexDirection: 'row', 
-            backgroundColor: '#25D366', // Cor oficial do WhatsApp
+            backgroundColor: '#25D366', 
             padding: 16, 
             borderRadius: 12, 
             alignItems: 'center', 

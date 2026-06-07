@@ -38,25 +38,43 @@ export const getIndexStyles = (isDark: boolean) => {
       justifyContent: 'center', 
       alignItems: 'center' 
     },
-    card: { 
-      padding: 15, 
-      borderRadius: 15, 
-      flexDirection: 'row', 
-      alignItems: 'center', 
-      marginBottom: 12, 
+    card: {
+      padding: 12,
+      borderRadius: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 15,
       borderWidth: 1,
       backgroundColor: theme.card,
-      borderColor: theme.border
+      borderColor: theme.border,
     },
-    cardInfo: { 
-      flex: 1 
+    cardImagem: {
+      width: 90,
+      height: 90,
+      borderRadius: 8,
+      backgroundColor: isDark ? '#333' : '#f0f0f0',
     },
-    cardTitulo: { 
-      fontSize: 16, 
-      fontWeight: 'bold', 
-      marginBottom: 4,
-      color: theme.texto
-    }
+    cardInfo: {
+      flex: 1,
+      marginLeft: 15,
+      justifyContent: 'center',
+    },
+    cardTitulo: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.texto,
+    },
+    cardData: {
+      color: '#28a745',
+      fontSize: 12,
+      fontWeight: 'bold',
+      marginTop: 4,
+    },
+    cardLocal: {
+      color: theme.subtexto,
+      fontSize: 13,
+      marginTop: 4,
+    },
   });
 
   // Retorno unificado para evitar erro de tipo no TypeScript

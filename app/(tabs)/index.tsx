@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
@@ -7,7 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../firebaseConfig';
 import { useAdmin } from '../../hooks/useAdmin';
 import { getIndexStyles } from '../../styles/index.styles';
-import { Evento } from '../../types/evento';
+import { Evento, parseImagens } from '../../types/evento';
 
 export default function HomeScreen() {
   const { isDark, toggleTheme } = useTheme();
@@ -67,30 +68,43 @@ export default function HomeScreen() {
               Nenhum evento cadastrado ainda.
             </Text>
           }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() =>
-                router.push({
-                  pathname: '/modal',
-                  params: {
-                    ...item,
-                    lat: item.latitude.toString(),
-                    lng: item.longitude.toString(),
-                  },
-                })
-              }
-            >
-              <View style={styles.cardInfo}>
-                <Text style={styles.cardTitulo}>{item.titulo}</Text>
-                <Text style={{ color: '#28a745', fontSize: 12, fontWeight: 'bold' }}>
-                  {new Date(item.dataInicio).toLocaleDateString('pt-BR')}
-                </Text>
-                <Text style={{ color: styles.colors.subtexto, fontSize: 13 }}>📍 {item.local}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#007bff" />
-            </TouchableOpacity>
-          )}
+          renderItem={({ item }) => {
+            const imagens = parseImagens(item.imagens);
+            const fotoCapa =
+              imagens[0] || 'https://via.placeholder.com/150x150.png?text=Sem+Foto';
+
+            return (
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() =>
+                  router.push({
+                    pathname: '/modal',
+                    params: {
+                      ...item,
+                      lat: item.latitude.toString(),
+                      lng: item.longitude.toString(),
+                    },
+                  })
+                }
+              >
+                <Image
+                  source={{ uri: fotoCapa }}
+                  style={styles.cardImagem}
+                  contentFit="cover"
+                />
+
+                <View style={styles.cardInfo}>
+                  <Text style={styles.cardTitulo}>{item.titulo}</Text>
+                  <Text style={styles.cardData}>
+                    {new Date(item.dataInicio).toLocaleDateString('pt-BR')}
+                  </Text>
+                  <Text style={styles.cardLocal}>📍 {item.local}</Text>
+                </View>
+
+                <Ionicons name="chevron-forward" size={20} color="#007bff" />
+              </TouchableOpacity>
+            );
+          }}
         />
       )}
     </View>

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { obterLocalizacaoAtual } from '../hooks/useLocalizacao';
+import { configurarIconesLeaflet, criarIconeEventoLeaflet } from '../utils/mapa';
 import { buscarRota, Coordenada, InfoRota } from '../utils/rota';
 import MapaRotaControls from './MapaRotaControls';
 
@@ -8,6 +9,7 @@ interface MapaModalProps {
   latitude: number;
   longitude: number;
   titulo: string;
+  categoria?: string;
   isDark: boolean;
   styles: {
     mapWrapper: object;
@@ -16,11 +18,17 @@ interface MapaModalProps {
   };
 }
 
-export default function MapaModal({ latitude, longitude, titulo, isDark, styles }: MapaModalProps) {
+export default function MapaModal({
+  latitude,
+  longitude,
+  titulo,
+  categoria,
+  isDark,
+  styles,
+}: MapaModalProps) {
   const containerRef = useRef<View>(null);
   const mapInstance = useRef<import('leaflet').Map | null>(null);
   const rotaLayer = useRef<import('leaflet').Polyline | null>(null);
-  const camadasRota = useRef<import('leaflet').Layer[]>([]);
 
   const destino: Coordenada = { latitude, longitude };
 
@@ -28,12 +36,43 @@ export default function MapaModal({ latitude, longitude, titulo, isDark, styles 
   const [carregando, setCarregando] = useState(false);
   const [mapaPronto, setMapaPronto] = useState(false);
 
+  const adicionarMarcadorEvento = (
+    L: typeof import('leaflet'),
+    mapa: import('leaflet').Map,
+    cor = '#007bff'
+  ) => {
+    const icone =
+      cor === '#dc3545'
+        ? criarIconeEventoLeaflet(L, categoria)
+        : L.divIcon({
+            className: '',
+            html: `<div style="
+              background:#007bff;
+              border:2px solid #fff;
+              border-radius:50%;
+              width:28px;
+              height:28px;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              color:#fff;
+              font-size:14px;
+              box-shadow:0 2px 6px rgba(0,0,0,0.25);
+            ">●</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+          });
+
+    return L.marker([latitude, longitude], { icon: icone }).addTo(mapa).bindPopup(titulo);
+  };
+
   useEffect(() => {
     let cancelado = false;
 
     const iniciarMapa = async () => {
       const L = (await import('leaflet')).default;
       await import('leaflet/dist/leaflet.css');
+      configurarIconesLeaflet(L);
 
       if (cancelado) return;
 
@@ -48,7 +87,7 @@ export default function MapaModal({ latitude, longitude, titulo, isDark, styles 
         attribution: '© OpenStreetMap',
       }).addTo(mapa);
 
-      L.marker([latitude, longitude]).addTo(mapa).bindPopup(titulo);
+      adicionarMarcadorEvento(L, mapa, '#dc3545');
 
       mapInstance.current = mapa;
       setMapaPronto(true);
@@ -61,7 +100,7 @@ export default function MapaModal({ latitude, longitude, titulo, isDark, styles 
       mapInstance.current?.remove();
       mapInstance.current = null;
     };
-  }, [latitude, longitude, titulo]);
+  }, [latitude, longitude, titulo, categoria]);
 
   const limparCamadasExcetoTiles = async () => {
     const mapa = mapInstance.current;
@@ -75,18 +114,18 @@ export default function MapaModal({ latitude, longitude, titulo, isDark, styles 
     });
 
     rotaLayer.current = null;
-    camadasRota.current = [];
   };
 
   const desenharRota = async (origem: Coordenada, infoRota: InfoRota) => {
     const L = (await import('leaflet')).default;
+    configurarIconesLeaflet(L);
     const mapa = mapInstance.current;
     if (!mapa) return;
 
     await limparCamadasExcetoTiles();
 
-    const marcadorOrigem = L.marker([origem.latitude, origem.longitude]).addTo(mapa);
-    const marcadorDestino = L.marker([latitude, longitude]).addTo(mapa).bindPopup(titulo);
+    L.marker([origem.latitude, origem.longitude]).addTo(mapa).bindPopup('Você está aqui');
+    adicionarMarcadorEvento(L, mapa, '#dc3545');
 
     const polyline = L.polyline(
       infoRota.coordenadas.map((c) => [c.latitude, c.longitude] as [number, number]),
@@ -94,7 +133,6 @@ export default function MapaModal({ latitude, longitude, titulo, isDark, styles 
     ).addTo(mapa);
 
     rotaLayer.current = polyline;
-    camadasRota.current = [marcadorOrigem, marcadorDestino, polyline];
     mapa.fitBounds(polyline.getBounds(), { padding: [30, 30] });
   };
 
@@ -124,10 +162,11 @@ export default function MapaModal({ latitude, longitude, titulo, isDark, styles 
     await limparCamadasExcetoTiles();
 
     const L = (await import('leaflet')).default;
+    configurarIconesLeaflet(L);
     const mapa = mapInstance.current;
     if (!mapa) return;
 
-    L.marker([latitude, longitude]).addTo(mapa).bindPopup(titulo);
+    adicionarMarcadorEvento(L, mapa, '#dc3545');
     mapa.setView([latitude, longitude], 14);
   };
 

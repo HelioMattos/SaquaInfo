@@ -166,6 +166,7 @@ export default function ModalScreen() {
           latitude={latitude}
           longitude={longitude}
           titulo={params.titulo as string}
+          categoria={params.categoria as string}
           isDark={isDark}
           styles={styles}
         />

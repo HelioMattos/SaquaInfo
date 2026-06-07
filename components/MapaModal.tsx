@@ -3,12 +3,14 @@ import { Alert, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { obterLocalizacaoAtual } from '../hooks/useLocalizacao';
 import { buscarRota, Coordenada, InfoRota } from '../utils/rota';
+import MarcadorMapa from './MarcadorMapa';
 import MapaRotaControls from './MapaRotaControls';
 
 interface MapaModalProps {
   latitude: number;
   longitude: number;
   titulo: string;
+  categoria?: string;
   isDark: boolean;
   styles: {
     mapWrapper: object;
@@ -17,7 +19,14 @@ interface MapaModalProps {
   };
 }
 
-export default function MapaModal({ latitude, longitude, titulo, isDark, styles }: MapaModalProps) {
+export default function MapaModal({
+  latitude,
+  longitude,
+  titulo,
+  categoria,
+  isDark,
+  styles,
+}: MapaModalProps) {
   const mapRef = useRef<MapView>(null);
   const destino: Coordenada = { latitude, longitude };
 
@@ -25,13 +34,16 @@ export default function MapaModal({ latitude, longitude, titulo, isDark, styles 
   const [minhaPosicao, setMinhaPosicao] = useState<Coordenada | null>(null);
   const [carregando, setCarregando] = useState(false);
 
-  const ajustarMapa = useCallback((origem: Coordenada, infoRota: InfoRota) => {
-    const pontos = [origem, destino, ...infoRota.coordenadas];
-    mapRef.current?.fitToCoordinates(pontos, {
-      edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
-      animated: true,
-    });
-  }, [destino]);
+  const ajustarMapa = useCallback(
+    (origem: Coordenada, infoRota: InfoRota) => {
+      const pontos = [origem, destino, ...infoRota.coordenadas];
+      mapRef.current?.fitToCoordinates(pontos, {
+        edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
+        animated: true,
+      });
+    },
+    [destino]
+  );
 
   const handleTracarRota = async () => {
     setCarregando(true);
@@ -80,18 +92,18 @@ export default function MapaModal({ latitude, longitude, titulo, isDark, styles 
             longitudeDelta: 0.01,
           }}
         >
-          <Marker coordinate={destino} title={titulo} pinColor="#dc3545" />
+          <Marker coordinate={destino} title={titulo}>
+            <MarcadorMapa categoria={categoria} />
+          </Marker>
 
           {minhaPosicao && (
-            <Marker coordinate={minhaPosicao} title="Você está aqui" pinColor="#007bff" />
+            <Marker coordinate={minhaPosicao} title="Você está aqui">
+              <MarcadorMapa cor="#28a745" />
+            </Marker>
           )}
 
           {rota && (
-            <Polyline
-              coordinates={rota.coordenadas}
-              strokeColor="#007bff"
-              strokeWidth={4}
-            />
+            <Polyline coordinates={rota.coordenadas} strokeColor="#007bff" strokeWidth={4} />
           )}
         </MapView>
       </View>

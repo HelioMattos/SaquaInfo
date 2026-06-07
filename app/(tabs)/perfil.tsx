@@ -1,0 +1,74 @@
+import { Ionicons } from '@expo/vector-icons';
+import { signOut } from 'firebase/auth';
+import React from 'react';
+import { Alert, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
+import { auth } from '../../firebaseConfig';
+import { useAdmin } from '../../hooks/useAdmin';
+import { getPerfilStyles } from '../../styles/perfil.styles';
+
+export default function PerfilScreen() {
+  const { isDark, toggleTheme } = useTheme();
+  const styles = getPerfilStyles(isDark);
+  const { isAdmin } = useAdmin();
+  const user = auth.currentUser;
+
+  const handleLogout = () => {
+    Alert.alert('Sair', 'Deseja realmente sair da sua conta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut(auth);
+          } catch {
+            Alert.alert('Erro', 'Não foi possível deslogar.');
+          }
+        },
+      },
+    ]);
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <View style={styles.avatar}>
+            <Ionicons name="person" size={50} color="#fff" />
+          </View>
+          <Text style={styles.userName}>Bem-vindo!</Text>
+          <Text style={styles.userEmail}>{user?.email || 'Usuário não identificado'}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Minha Conta</Text>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="shield-checkmark-outline" size={24} color="#007bff" />
+            <Text style={styles.infoText}>
+              Perfil: {isAdmin ? 'Administrador' : 'Usuário'}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="location-outline" size={24} color="#007bff" />
+            <Text style={styles.infoText}>Localização: Saquarema, RJ</Text>
+          </View>
+
+          <TouchableOpacity style={styles.infoRow} onPress={toggleTheme}>
+            <Ionicons name={isDark ? 'sunny' : 'moon'} size={24} color={isDark ? '#ffcc00' : '#555'} />
+            <Text style={styles.infoText}>
+              Tema: {isDark ? 'Escuro' : 'Claro'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={24} color="#fff" style={{ marginRight: 10 }} />
+          <Text style={styles.logoutText}>SAIR DA CONTA</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}

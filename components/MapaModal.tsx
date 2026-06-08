@@ -1,8 +1,8 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { Alert, View } from 'react-native';
+import React, { useCallback, useRef } from 'react';
+import { View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
-import { obterLocalizacaoAtual } from '../hooks/useLocalizacao';
-import { buscarRota, Coordenada, InfoRota } from '../utils/rota';
+import { useNavegacao } from '../hooks/useNavegacao';
+import { Coordenada } from '../utils/rota';
 import MarcadorMapa from './MarcadorMapa';
 import MapaRotaControls from './MapaRotaControls';
 
@@ -30,44 +30,46 @@ export default function MapaModal({
   const mapRef = useRef<MapView>(null);
   const destino: Coordenada = { latitude, longitude };
 
-  const [rota, setRota] = useState<InfoRota | null>(null);
-  const [minhaPosicao, setMinhaPosicao] = useState<Coordenada | null>(null);
-  const [carregando, setCarregando] = useState(false);
+  const onCentralizarMapa = useCallback((posicao: Coordenada) => {
+    mapRef.current?.animateToRegion(
+      {
+        latitude: posicao.latitude,
+        longitude: posicao.longitude,
+        latitudeDelta: 0.008,
+        longitudeDelta: 0.008,
+      },
+      600
+    );
+  }, []);
 
-  const ajustarMapa = useCallback(
-    (origem: Coordenada, infoRota: InfoRota) => {
-      const pontos = [origem, destino, ...infoRota.coordenadas];
-      mapRef.current?.fitToCoordinates(pontos, {
-        edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
-        animated: true,
-      });
-    },
-    [destino]
-  );
+  const {
+    rota,
+    minhaPosicao,
+    carregando,
+    navegando,
+    passoAtual,
+    proximoPasso,
+    distanciaFormatada,
+    tracarRota,
+    iniciarNavegacao,
+    pararNavegacao,
+    limparRota,
+  } = useNavegacao({ destino, onCentralizarMapa });
 
   const handleTracarRota = async () => {
-    setCarregando(true);
-    try {
-      const origem = await obterLocalizacaoAtual();
-      if (!origem) return;
+    const resultado = await tracarRota();
+    if (!resultado) return;
 
-      const infoRota = await buscarRota(origem, destino);
-      if (!infoRota) {
-        Alert.alert('Rota indisponível', 'Não foi possível calcular o trajeto. Tente novamente.');
-        return;
-      }
-
-      setMinhaPosicao(origem);
-      setRota(infoRota);
-      ajustarMapa(origem, infoRota);
-    } finally {
-      setCarregando(false);
-    }
+    const { origem, infoRota } = resultado;
+    const pontos = [origem, destino, ...infoRota.coordenadas];
+    mapRef.current?.fitToCoordinates(pontos, {
+      edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
+      animated: true,
+    });
   };
 
   const handleLimparRota = () => {
-    setRota(null);
-    setMinhaPosicao(null);
+    limparRota();
     mapRef.current?.animateToRegion({
       latitude,
       longitude,
@@ -78,13 +80,14 @@ export default function MapaModal({
 
   return (
     <View>
-      <View style={[styles.mapWrapper, rota && styles.mapWrapperRota]}>
+      <View style={[styles.mapWrapper, (rota || navegando) && styles.mapWrapperRota]}>
         <MapView
           ref={mapRef}
           style={styles.map}
           userInterfaceStyle={isDark ? 'dark' : 'light'}
           showsUserLocation
           showsMyLocationButton
+          followsUserLocation={navegando}
           initialRegion={{
             latitude,
             longitude,
@@ -112,7 +115,13 @@ export default function MapaModal({
         carregando={carregando}
         rota={rota}
         isDark={isDark}
+        navegando={navegando}
+        passoAtual={passoAtual}
+        proximoPasso={proximoPasso}
+        distanciaFormatada={distanciaFormatada}
         onTracarRota={handleTracarRota}
+        onIniciarNavegacao={iniciarNavegacao}
+        onPararNavegacao={pararNavegacao}
         onLimparRota={rota ? handleLimparRota : undefined}
       />
     </View>

@@ -65,7 +65,7 @@ export const getModalStyles = (isDark: boolean) => {
     carouselDotActive: { backgroundColor: '#007bff' },
     
     mapWrapper: { height: 220, marginTop: 25, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: theme.border },
-    mapWrapperRota: { height: 320 },
+    mapWrapperRota: { height: 380 },
     map: { flex: 1, width: '100%', height: '100%' }
   });
 

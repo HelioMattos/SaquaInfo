@@ -19,6 +19,7 @@ import { useTheme } from '../context/ThemeContext';
 import { db } from '../firebaseConfig';
 import { useAdmin } from '../hooks/useAdmin';
 import { getModalStyles } from '../styles/modal.styles';
+import { compartilharEventoWhatsApp } from '../utils/compartilhar';
 import { parseImagens } from '../types/evento';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -52,6 +53,10 @@ export default function ModalScreen() {
 
   const latitude = parseFloat(params.lat as string) || -22.9251;
   const longitude = parseFloat(params.lng as string) || -42.4862;
+
+  const handleShareWhatsApp = () => {
+    compartilharEventoWhatsApp(params, formatarDataHora);
+  };
 
   return (
     <View style={styles.container}>
@@ -161,6 +166,11 @@ export default function ModalScreen() {
             {params.descricao || 'Nenhuma descrição detalhada fornecida.'}
           </Text>
         </View>
+
+        <TouchableOpacity style={styles.botaoWhatsApp} onPress={handleShareWhatsApp}>
+          <Ionicons name="logo-whatsapp" size={24} color="#fff" style={{ marginRight: 10 }} />
+          <Text style={styles.textoWhatsApp}>Compartilhar com Amigos</Text>
+        </TouchableOpacity>
 
         <MapaModal
           latitude={latitude}

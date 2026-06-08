@@ -41,6 +41,23 @@ export const getModalStyles = (isDark: boolean) => {
     labelVerde: { fontSize: 16, fontWeight: 'bold', color: '#28a745', marginBottom: 8 },
     descricaoText: { fontSize: 16, color: theme.texto, lineHeight: 24 },
 
+    botaoWhatsApp: {
+      flexDirection: 'row',
+      backgroundColor: '#25D366',
+      padding: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 20,
+      marginBottom: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+    textoWhatsApp: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+
     carouselContainer: { marginBottom: 20 },
     carouselImage: { width: '100%', height: 200, borderRadius: 16 },
     carouselDots: { flexDirection: 'row', justifyContent: 'center', marginTop: 10, gap: 6 },

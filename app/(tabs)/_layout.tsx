@@ -39,6 +39,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="person" size={26} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="modal"
+        options={{
+          href: null,
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 }

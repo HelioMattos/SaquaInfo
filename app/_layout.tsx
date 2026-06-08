@@ -53,15 +53,6 @@ export default function RootLayout() {
           options={{ 
             headerShown: true, 
             title: 'Gerenciar Evento',
-            // Dica: Aqui você também pode aplicar cores do tema no header futuramente
-          }} 
-        />
-        <Stack.Screen 
-          name="modal" 
-          options={{ 
-            presentation: 'modal', 
-            headerShown: true, 
-            title: 'Detalhes' 
           }} 
         />
       </Stack>

@@ -18,7 +18,7 @@ export const getModalStyles = (isDark: boolean) => {
       justifyContent: 'space-between', 
       paddingHorizontal: 20, 
       paddingBottom: 15, 
-      paddingTop: 50, 
+      paddingTop: 15, 
       borderBottomWidth: 1, 
       borderBottomColor: theme.border 
     },

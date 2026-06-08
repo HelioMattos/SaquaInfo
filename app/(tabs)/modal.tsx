@@ -14,13 +14,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import MapaModal from '../components/MapaModal';
-import { useTheme } from '../context/ThemeContext';
-import { db } from '../firebaseConfig';
-import { useAdmin } from '../hooks/useAdmin';
-import { getModalStyles } from '../styles/modal.styles';
-import { compartilharEventoWhatsApp } from '../utils/compartilhar';
-import { parseImagens } from '../types/evento';
+import MapaModal from '../../components/MapaModal';
+import { useTheme } from '../../context/ThemeContext';
+import { db } from '../../firebaseConfig';
+import { useAdmin } from '../../hooks/useAdmin';
+import { getModalStyles } from '../../styles/modal.styles';
+import { compartilharEventoWhatsApp } from '../../utils/compartilhar';
+import { parseImagens } from '../../types/evento';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_WIDTH = SCREEN_WIDTH - 40;
@@ -97,7 +97,7 @@ export default function ModalScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 100 }]}>
         {imagens.length > 0 && (
           <View style={styles.carouselContainer}>
             <FlatList

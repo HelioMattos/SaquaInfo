@@ -38,11 +38,7 @@ export default function MapaExplore() {
         if (eventoClicado) {
           router.push({
             pathname: '/modal',
-            params: {
-              ...eventoClicado,
-              lat: eventoClicado.latitude.toString(),
-              lng: eventoClicado.longitude.toString(),
-            },
+            params: { id: eventoClicado.id },
           });
         }
       }

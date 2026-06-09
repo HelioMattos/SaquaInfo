@@ -66,11 +66,7 @@ export default function HomeScreen() {
                 onPress={() =>
                   router.push({
                     pathname: '/modal',
-                    params: {
-                      ...item,
-                      lat: item.latitude.toString(),
-                      lng: item.longitude.toString(),
-                    },
+                    params: { id: item.id },
                   })
                 }
               >

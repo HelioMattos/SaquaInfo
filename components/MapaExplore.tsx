@@ -28,11 +28,7 @@ export default function MapaExplore() {
   const abrirEvento = (evento: Evento) => {
     router.push({
       pathname: '/modal',
-      params: {
-        ...evento,
-        lat: evento.latitude.toString(),
-        lng: evento.longitude.toString(),
-      },
+      params: { id: evento.id },
     });
   };
 

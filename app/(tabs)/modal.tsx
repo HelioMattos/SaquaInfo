@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { deleteDoc, doc } from 'firebase/firestore';
-import React, { useState } from 'react';
+import { deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Dimensions,
   FlatList,
@@ -19,8 +20,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../firebaseConfig';
 import { useAdmin } from '../../hooks/useAdmin';
 import { getModalStyles } from '../../styles/modal.styles';
+import { Evento, parseImagens } from '../../types/evento';
 import { compartilharEventoWhatsApp } from '../../utils/compartilhar';
-import { parseImagens } from '../../types/evento';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_WIDTH = SCREEN_WIDTH - 40;
@@ -32,8 +33,32 @@ export default function ModalScreen() {
   const params = useLocalSearchParams();
   const { isAdmin } = useAdmin();
   const [activeImage, setActiveImage] = useState(0);
+  const [evento, setEvento] = useState<Evento | null>(null);
+  const [carregando, setCarregando] = useState(true);
 
-  const imagens = parseImagens(params.imagens as string | undefined);
+  const eventoId = (params.id as string) || '';
+
+  useEffect(() => {
+    if (!eventoId) {
+      setCarregando(false);
+      return;
+    }
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'eventos', eventoId),
+      (snap) => {
+        if (snap.exists()) {
+          setEvento({ id: snap.id, ...snap.data() } as Evento);
+        }
+        setCarregando(false);
+      },
+      () => setCarregando(false)
+    );
+
+    return unsubscribe;
+  }, [eventoId]);
+
+  const imagens = parseImagens(evento?.imagens);
 
   const formatarDataHora = (dataString: string | undefined) => {
     if (!dataString) return 'Não informada';
@@ -51,12 +76,40 @@ export default function ModalScreen() {
     setActiveImage(index);
   };
 
-  const latitude = parseFloat(params.lat as string) || -22.9251;
-  const longitude = parseFloat(params.lng as string) || -42.4862;
+  const latitude = evento?.latitude ?? -22.9251;
+  const longitude = evento?.longitude ?? -42.4862;
 
   const handleShareWhatsApp = () => {
-    compartilharEventoWhatsApp(params, formatarDataHora);
+    if (!evento) return;
+    compartilharEventoWhatsApp(
+      {
+        id: evento.id,
+        titulo: evento.titulo,
+        local: evento.local,
+        dataInicio: evento.dataInicio,
+      },
+      formatarDataHora
+    );
   };
+
+  if (carregando) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
+
+  if (!evento) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <Text style={{ color: styles.colors.texto, textAlign: 'center' }}>Evento não encontrado.</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+          <Text style={{ color: '#007bff', fontWeight: 'bold' }}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -70,7 +123,7 @@ export default function ModalScreen() {
             <>
               <TouchableOpacity
                 style={styles.iconBtn}
-                onPress={() => router.push({ pathname: '/cadastrar', params: { ...params } })}
+                onPress={() => router.push({ pathname: '/cadastrar', params: { id: evento.id } })}
               >
                 <Ionicons name="create-outline" size={24} color="#007bff" />
               </TouchableOpacity>
@@ -83,7 +136,7 @@ export default function ModalScreen() {
                       text: 'Excluir',
                       style: 'destructive',
                       onPress: async () => {
-                        await deleteDoc(doc(db, 'eventos', params.id as string));
+                        await deleteDoc(doc(db, 'eventos', evento.id));
                         router.back();
                       },
                     },
@@ -130,9 +183,9 @@ export default function ModalScreen() {
         )}
 
         <View style={styles.rowInfo}>
-          <Text style={styles.tituloText}>{params.titulo}</Text>
+          <Text style={styles.tituloText}>{evento.titulo}</Text>
           <View style={styles.tag}>
-            <Text style={styles.tagTexto}>{params.categoria || 'Geral'}</Text>
+            <Text style={styles.tagTexto}>{evento.categoria || 'Geral'}</Text>
           </View>
         </View>
 
@@ -140,7 +193,7 @@ export default function ModalScreen() {
           <Ionicons name="location" size={24} color="#007bff" />
           <View style={styles.infoTextGroup}>
             <Text style={styles.infoLabel}>Localização</Text>
-            <Text style={styles.infoValue}>{params.local}</Text>
+            <Text style={styles.infoValue}>{evento.local}</Text>
           </View>
         </View>
 
@@ -148,7 +201,7 @@ export default function ModalScreen() {
           <Ionicons name="calendar" size={24} color="#28a745" />
           <View style={styles.infoTextGroup}>
             <Text style={styles.infoLabel}>Início</Text>
-            <Text style={styles.infoValue}>{formatarDataHora(params.dataInicio as string)}</Text>
+            <Text style={styles.infoValue}>{formatarDataHora(evento.dataInicio)}</Text>
           </View>
         </View>
 
@@ -156,14 +209,14 @@ export default function ModalScreen() {
           <Ionicons name="time" size={24} color="#dc3545" />
           <View style={styles.infoTextGroup}>
             <Text style={styles.infoLabel}>Término</Text>
-            <Text style={styles.infoValue}>{formatarDataHora(params.dataTermino as string)}</Text>
+            <Text style={styles.infoValue}>{formatarDataHora(evento.dataTermino)}</Text>
           </View>
         </View>
 
         <View style={styles.descricaoContainer}>
           <Text style={styles.labelVerde}>Sobre o evento</Text>
           <Text style={styles.descricaoText}>
-            {params.descricao || 'Nenhuma descrição detalhada fornecida.'}
+            {evento.descricao || 'Nenhuma descrição detalhada fornecida.'}
           </Text>
         </View>
 
@@ -175,8 +228,8 @@ export default function ModalScreen() {
         <MapaModal
           latitude={latitude}
           longitude={longitude}
-          titulo={params.titulo as string}
-          categoria={params.categoria as string}
+          titulo={evento.titulo}
+          categoria={evento.categoria}
           isDark={isDark}
           styles={styles}
         />

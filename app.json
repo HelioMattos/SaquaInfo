@@ -11,13 +11,18 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "O SaquaInfo usa sua localização para traçar a rota até os eventos."
+        "NSLocationWhenInUseUsageDescription": "O SaquaInfo usa sua localização para traçar a rota até os eventos.",
+        "NSCameraUsageDescription": "O SaquaInfo usa a câmera para fotografar eventos.",
+        "NSPhotoLibraryUsageDescription": "O SaquaInfo acessa suas fotos para os eventos."
       }
     },
     "android": {
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
@@ -57,6 +62,13 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "O SaquaInfo usa sua localização para traçar a rota até os eventos."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O SaquaInfo acessa suas fotos para os eventos.",
+          "cameraPermission": "O SaquaInfo usa a câmera para fotografar eventos."
         }
       ]
     ],

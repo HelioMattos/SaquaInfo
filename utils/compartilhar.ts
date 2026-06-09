@@ -15,19 +15,13 @@ export function gerarLinkEvento(params: ParamsEvento): string {
     return window.location.href;
   }
 
+  const id = valorParam(params, 'id');
+  if (id) {
+    return `${SITE_URL}/modal?id=${encodeURIComponent(id)}`;
+  }
+
   const search = new URLSearchParams();
-  const campos = [
-    'id',
-    'titulo',
-    'local',
-    'descricao',
-    'categoria',
-    'dataInicio',
-    'dataTermino',
-    'imagens',
-    'lat',
-    'lng',
-  ];
+  const campos = ['id', 'titulo', 'local', 'dataInicio'];
 
   campos.forEach((campo) => {
     const valor = valorParam(params, campo);

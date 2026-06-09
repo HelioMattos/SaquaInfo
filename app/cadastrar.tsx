@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,10 +15,13 @@ import {
   View,
 } from 'react-native';
 import MapaCustomizado from '../components/MapaCustomizado';
+import SeletorFotos from '../components/SeletorFotos';
 import { useTheme } from '../context/ThemeContext';
 import { db } from '../firebaseConfig';
 import { useAdmin } from '../hooks/useAdmin';
 import { getCadastrarStyles } from '../styles/cadastrar.styles';
+import { parseImagens } from '../types/evento';
+import { prepararListaImagens } from '../utils/imagens';
 
 export default function CadastrarEvento() {
   const { isDark } = useTheme();
@@ -35,10 +38,10 @@ export default function CadastrarEvento() {
   const [categoria, setCategoria] = useState('Outros');
   const [coordenadas, setCoordenadas] = useState({ latitude: -22.9251, longitude: -42.4862 });
   const [carregando, setCarregando] = useState(false);
+  const [processandoFotos, setProcessandoFotos] = useState(false);
+  const [carregandoEvento, setCarregandoEvento] = useState(isEdicao);
 
-  const [img1, setImg1] = useState('');
-  const [img2, setImg2] = useState('');
-  const [img3, setImg3] = useState('');
+  const [fotos, setFotos] = useState<string[]>(['', '', '']);
 
   const [dataInicio, setDataInicio] = useState(new Date());
   const [dataTermino, setDataTermino] = useState(new Date());
@@ -65,24 +68,33 @@ export default function CadastrarEvento() {
   }, [isAdmin, loadingAdmin]);
 
   useEffect(() => {
-    if (!isEdicao) return;
+    if (!isEdicao || !params.id) return;
 
-    setTitulo((params.titulo as string) || '');
-    setLocal((params.local as string) || '');
-    setDescricao((params.descricao as string) || '');
-    setCategoria((params.categoria as string) || 'Outros');
-    setCoordenadas({
-      latitude: parseFloat(params.lat as string) || -22.9251,
-      longitude: parseFloat(params.lng as string) || -42.4862,
-    });
-    if (params.dataInicio) setDataInicio(new Date(params.dataInicio as string));
-    if (params.dataTermino) setDataTermino(new Date(params.dataTermino as string));
-    if (params.imagens) {
-      const imgs = (params.imagens as string).split(',');
-      setImg1(imgs[0] || '');
-      setImg2(imgs[1] || '');
-      setImg3(imgs[2] || '');
-    }
+    const carregarEvento = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'eventos', params.id as string));
+        if (!snap.exists()) return;
+
+        const data = snap.data();
+        setTitulo(data.titulo || '');
+        setLocal(data.local || '');
+        setDescricao(data.descricao || '');
+        setCategoria(data.categoria || 'Outros');
+        setCoordenadas({
+          latitude: data.latitude ?? -22.9251,
+          longitude: data.longitude ?? -42.4862,
+        });
+        if (data.dataInicio) setDataInicio(new Date(data.dataInicio));
+        if (data.dataTermino) setDataTermino(new Date(data.dataTermino));
+
+        const imgs = parseImagens(data.imagens);
+        setFotos([imgs[0] || '', imgs[1] || '', imgs[2] || '']);
+      } finally {
+        setCarregandoEvento(false);
+      }
+    };
+
+    carregarEvento();
   }, [isEdicao, params.id]);
 
   const onChangePicker = (_event: unknown, selectedDate?: Date) => {
@@ -96,13 +108,15 @@ export default function CadastrarEvento() {
   };
 
   const handleSalvar = async () => {
-    if (!titulo || !local || !descricao || !img1) {
-      return Alert.alert('Atenção', 'Preencha Título, Local, Descrição e ao menos a primeira Foto.');
+    if (!titulo || !local || !descricao || !fotos[0]) {
+      return Alert.alert('Atenção', 'Preencha Título, Local, Descrição e ao menos a primeira foto.');
     }
 
     setCarregando(true);
+    setProcessandoFotos(true);
+
     try {
-      const listaFotos = [img1, img2, img3].filter((url) => url !== '').join(',');
+      const listaFotos = await prepararListaImagens(fotos);
 
       const dados = {
         titulo,
@@ -124,14 +138,17 @@ export default function CadastrarEvento() {
       }
 
       router.back();
-    } catch {
-      Alert.alert('Erro', 'Falha ao salvar.');
+    } catch (erro) {
+      const mensagem =
+        erro instanceof Error ? erro.message : 'Não foi possível salvar o evento. Tente novamente.';
+      Alert.alert('Erro ao salvar', mensagem);
     } finally {
       setCarregando(false);
+      setProcessandoFotos(false);
     }
   };
 
-  if (loadingAdmin || !isAdmin) {
+  if (loadingAdmin || !isAdmin || carregandoEvento) {
     return <ActivityIndicator style={{ flex: 1 }} size="large" color="#007bff" />;
   }
 
@@ -158,28 +175,11 @@ export default function CadastrarEvento() {
           placeholder="Ex: Praia de Itaúna"
         />
 
-        <Text style={styles.label}>Links das Fotos (Para o Carrossel)</Text>
-        <TextInput
-          style={[styles.input, { marginBottom: 5 }]}
-          value={img1}
-          onChangeText={setImg1}
-          placeholderTextColor={styles.colors.placeholder}
-          placeholder="URL da Foto 1 (Obrigatória)"
-        />
-        <TextInput
-          style={[styles.input, { marginBottom: 5 }]}
-          value={img2}
-          onChangeText={setImg2}
-          placeholderTextColor={styles.colors.placeholder}
-          placeholder="URL da Foto 2"
-        />
-        <TextInput
-          style={styles.input}
-          value={img3}
-          onChangeText={setImg3}
-          placeholderTextColor={styles.colors.placeholder}
-          placeholder="URL da Foto 3"
-        />
+        <Text style={styles.label}>Fotos do evento</Text>
+        <Text style={{ color: styles.colors.placeholder, fontSize: 12, marginBottom: 8 }}>
+          Toque para usar a câmera ou escolher da galeria. As fotos ficam salvas no banco, sem custo extra.
+        </Text>
+        <SeletorFotos fotos={fotos} onChange={setFotos} isDark={isDark} obrigatoria />
 
         <Text style={styles.label}>Data e Hora de Início</Text>
         <View style={styles.dateTimeRow}>
@@ -262,14 +262,19 @@ export default function CadastrarEvento() {
           placeholder="Detalhes..."
         />
 
-        <Text style={styles.label}>Toque no Mapa para ajustar o local exato</Text>
+        <Text style={styles.label}>Toque no mapa para marcar o local exato</Text>
+        <Text style={{ color: styles.colors.placeholder, fontSize: 12, marginBottom: 6 }}>
+          Lat: {coordenadas.latitude.toFixed(5)} | Lng: {coordenadas.longitude.toFixed(5)}
+        </Text>
         <View style={styles.mapContainer}>
           <MapaCustomizado coordenadas={coordenadas} setCoordenadas={setCoordenadas} isDark={isDark} />
         </View>
 
         <View style={styles.buttonArea}>
           <TouchableOpacity style={styles.button} onPress={handleSalvar} disabled={carregando}>
-            <Text style={styles.buttonText}>{carregando ? 'SALVANDO...' : 'SALVAR EVENTO'}</Text>
+            <Text style={styles.buttonText}>
+              {processandoFotos ? 'PROCESSANDO FOTOS...' : carregando ? 'SALVANDO...' : 'SALVAR EVENTO'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.buttonCancel} onPress={() => router.back()} disabled={carregando}>

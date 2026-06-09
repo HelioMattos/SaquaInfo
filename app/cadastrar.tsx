@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { addDoc, collection, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
@@ -15,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import MapaCustomizado from '../components/MapaCustomizado';
+import SeletorDataHora from '../components/SeletorDataHora';
 import SeletorFotos from '../components/SeletorFotos';
 import { useTheme } from '../context/ThemeContext';
 import { db } from '../firebaseConfig';
@@ -45,11 +45,6 @@ export default function CadastrarEvento() {
 
   const [dataInicio, setDataInicio] = useState(new Date());
   const [dataTermino, setDataTermino] = useState(new Date());
-  const [showPicker, setShowPicker] = useState<{
-    show: boolean;
-    mode: 'date' | 'time';
-    target: 'inicio' | 'termino';
-  }>({ show: false, mode: 'date', target: 'inicio' });
 
   const categorias = [
     { id: 'Esportes', icon: 'fitness' },
@@ -96,16 +91,6 @@ export default function CadastrarEvento() {
 
     carregarEvento();
   }, [isEdicao, params.id]);
-
-  const onChangePicker = (_event: unknown, selectedDate?: Date) => {
-    setShowPicker((prev) => {
-      if (selectedDate) {
-        if (prev.target === 'inicio') setDataInicio(selectedDate);
-        else setDataTermino(selectedDate);
-      }
-      return { ...prev, show: false };
-    });
-  };
 
   const handleSalvar = async () => {
     if (!titulo || !local || !descricao || !fotos[0]) {
@@ -182,53 +167,24 @@ export default function CadastrarEvento() {
         <SeletorFotos fotos={fotos} onChange={setFotos} isDark={isDark} obrigatoria />
 
         <Text style={styles.label}>Data e Hora de Início</Text>
-        <View style={styles.dateTimeRow}>
-          <TouchableOpacity
-            style={styles.dateTimeBtn}
-            onPress={() => setShowPicker({ show: true, mode: 'date', target: 'inicio' })}
-          >
-            <Ionicons name="calendar" size={18} color="#007bff" />
-            <Text style={styles.dateTimeText}>{dataInicio.toLocaleDateString('pt-BR')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.dateTimeBtn}
-            onPress={() => setShowPicker({ show: true, mode: 'time', target: 'inicio' })}
-          >
-            <Ionicons name="time" size={18} color="#007bff" />
-            <Text style={styles.dateTimeText}>
-              {dataInicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <SeletorDataHora
+          value={dataInicio}
+          onChange={setDataInicio}
+          isDark={isDark}
+          dateTimeRow={styles.dateTimeRow}
+          dateTimeBtn={styles.dateTimeBtn}
+          dateTimeText={styles.dateTimeText}
+        />
 
         <Text style={styles.label}>Data e Hora de Término</Text>
-        <View style={styles.dateTimeRow}>
-          <TouchableOpacity
-            style={styles.dateTimeBtn}
-            onPress={() => setShowPicker({ show: true, mode: 'date', target: 'termino' })}
-          >
-            <Ionicons name="calendar" size={18} color="#007bff" />
-            <Text style={styles.dateTimeText}>{dataTermino.toLocaleDateString('pt-BR')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.dateTimeBtn}
-            onPress={() => setShowPicker({ show: true, mode: 'time', target: 'termino' })}
-          >
-            <Ionicons name="time" size={18} color="#007bff" />
-            <Text style={styles.dateTimeText}>
-              {dataTermino.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {showPicker.show && (
-          <DateTimePicker
-            value={showPicker.target === 'inicio' ? dataInicio : dataTermino}
-            mode={showPicker.mode}
-            is24Hour
-            onChange={onChangePicker}
-          />
-        )}
+        <SeletorDataHora
+          value={dataTermino}
+          onChange={setDataTermino}
+          isDark={isDark}
+          dateTimeRow={styles.dateTimeRow}
+          dateTimeBtn={styles.dateTimeBtn}
+          dateTimeText={styles.dateTimeText}
+        />
 
         <Text style={styles.label}>Categoria</Text>
         <View style={styles.categoriaContainer}>

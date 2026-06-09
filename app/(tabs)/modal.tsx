@@ -10,6 +10,7 @@ import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -25,6 +26,8 @@ import { compartilharEventoWhatsApp } from '../../utils/compartilhar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_WIDTH = SCREEN_WIDTH - 40;
+const IMAGE_HEIGHT = Platform.OS === 'web' ? 360 : 220;
+const IMAGE_FIT = Platform.OS === 'web' ? 'contain' : 'cover';
 
 export default function ModalScreen() {
   const { isDark } = useTheme();
@@ -164,8 +167,15 @@ export default function ModalScreen() {
               renderItem={({ item }) => (
                 <Image
                   source={{ uri: item }}
-                  style={[styles.carouselImage, { width: IMAGE_WIDTH }]}
-                  contentFit="cover"
+                  style={[
+                    styles.carouselImage,
+                    {
+                      width: IMAGE_WIDTH,
+                      height: IMAGE_HEIGHT,
+                      backgroundColor: isDark ? '#1e1e1e' : '#f0f0f0',
+                    },
+                  ]}
+                  contentFit={IMAGE_FIT}
                 />
               )}
             />

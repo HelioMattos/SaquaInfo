@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import HeaderActions from '../../components/HeaderActions';
 import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../firebaseConfig';
@@ -73,7 +73,7 @@ export default function HomeScreen() {
                 <Image
                   source={{ uri: fotoCapa }}
                   style={styles.cardImagem}
-                  contentFit="cover"
+                  contentFit={Platform.OS === 'web' ? 'contain' : 'cover'}
                 />
 
                 <View style={styles.cardInfo}>

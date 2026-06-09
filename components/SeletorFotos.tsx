@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Text, TouchableOpacity, View } from 'react-native';
 import { mostrarOpcoesImagem } from '../utils/imagens';
 
 interface SeletorFotosProps {
@@ -52,7 +52,15 @@ export default function SeletorFotos({ fotos, onChange, isDark, obrigatoria }: S
           >
             {uri ? (
               <View>
-                <Image source={{ uri }} style={{ width: '100%', height: 160 }} contentFit="cover" />
+                <Image
+                  source={{ uri }}
+                  style={{
+                    width: '100%',
+                    height: Platform.OS === 'web' ? 240 : 160,
+                    backgroundColor: fundo,
+                  }}
+                  contentFit={Platform.OS === 'web' ? 'contain' : 'cover'}
+                />
                 <View style={{ flexDirection: 'row', padding: 10, gap: 8 }}>
                   <TouchableOpacity
                     style={flexBtn('#007bff')}

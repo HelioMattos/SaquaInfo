@@ -5,6 +5,7 @@ import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import HeaderActions from '../../components/HeaderActions';
+import LogoSaquaInfo from '../../components/LogoSaquaInfo';
 import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../firebaseConfig';
 import { getIndexStyles } from '../../styles/index.styles';
@@ -39,7 +40,7 @@ export default function HomeScreen() {
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       <View style={styles.header}>
-        <Text style={[styles.tituloHeader, { color: '#007bff' }]}>SaquaInfo 🌊</Text>
+        <LogoSaquaInfo />
         <HeaderActions showThemeToggle />
       </View>
 

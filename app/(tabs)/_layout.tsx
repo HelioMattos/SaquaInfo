@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import HeaderActions from '../../components/HeaderActions';
+import LogoSaquaInfo from '../../components/LogoSaquaInfo';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function TabLayout() {
@@ -12,7 +13,9 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: true,
         tabBarActiveTintColor: '#007bff',
-        headerTitle: 'SaquaInfo 🌊',
+        headerTitle: () => (
+          <LogoSaquaInfo color={isDark ? '#fff' : '#007bff'} iconSize={26} fontSize={20} />
+        ),
         headerStyle: { backgroundColor: isDark ? '#1e1e1e' : '#fff' },
         headerTintColor: isDark ? '#fff' : '#333',
         headerRight: () => <HeaderActions />,

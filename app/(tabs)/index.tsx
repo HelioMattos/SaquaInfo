@@ -4,31 +4,33 @@ import { useRouter } from 'expo-router';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import HeaderActions from '../../components/HeaderActions';
 import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../firebaseConfig';
-import { useAdmin } from '../../hooks/useAdmin';
 import { getIndexStyles } from '../../styles/index.styles';
 import { Evento, parseImagens } from '../../types/evento';
 
 export default function HomeScreen() {
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark } = useTheme();
   const styles = getIndexStyles(isDark);
-  const { isAdmin } = useAdmin();
-
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const q = query(collection(db, 'eventos'), orderBy('criadoEm', 'desc'));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const lista: Evento[] = [];
-      querySnapshot.forEach((docSnap) => {
-        lista.push({ id: docSnap.id, ...docSnap.data() } as Evento);
-      });
-      setEventos(lista);
-      setCarregando(false);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const lista: Evento[] = [];
+        querySnapshot.forEach((docSnap) => {
+          lista.push({ id: docSnap.id, ...docSnap.data() } as Evento);
+        });
+        setEventos(lista);
+        setCarregando(false);
+      },
+      () => setCarregando(false)
+    );
     return () => unsubscribe();
   }, []);
 
@@ -38,22 +40,7 @@ export default function HomeScreen() {
 
       <View style={styles.header}>
         <Text style={[styles.tituloHeader, { color: '#007bff' }]}>SaquaInfo 🌊</Text>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity onPress={toggleTheme} style={{ marginRight: 15 }}>
-            <Ionicons
-              name={isDark ? 'sunny' : 'moon'}
-              size={24}
-              color={isDark ? '#ffcc00' : '#333'}
-            />
-          </TouchableOpacity>
-
-          {isAdmin && (
-            <TouchableOpacity style={styles.botaoAdd} onPress={() => router.push('/cadastrar')}>
-              <Ionicons name="add" size={30} color="#fff" />
-            </TouchableOpacity>
-          )}
-        </View>
+        <HeaderActions showThemeToggle />
       </View>
 
       {carregando ? (

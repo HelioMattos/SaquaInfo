@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import HeaderActions from '../../components/HeaderActions';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function TabLayout() {
@@ -14,6 +15,7 @@ export default function TabLayout() {
         headerTitle: 'SaquaInfo 🌊',
         headerStyle: { backgroundColor: isDark ? '#1e1e1e' : '#fff' },
         headerTintColor: isDark ? '#fff' : '#333',
+        headerRight: () => <HeaderActions />,
         tabBarStyle: { backgroundColor: isDark ? '#1e1e1e' : '#fff' },
         tabBarInactiveTintColor: isDark ? '#888' : '#999',
       }}
@@ -22,6 +24,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Eventos',
+          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="calendar" size={26} color={color} />,
         }}
       />

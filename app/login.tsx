@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth'; // Adicionado sendPasswordResetEmail
 import React, { useState } from 'react';
@@ -42,6 +43,13 @@ export default function LoginScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#121212' : '#fff' }]}>
+      <TouchableOpacity
+        onPress={() => router.back()}
+        style={{ position: 'absolute', top: 50, left: 20, zIndex: 10 }}
+      >
+        <Ionicons name="arrow-back" size={28} color={isDark ? '#fff' : '#333'} />
+      </TouchableOpacity>
+
       <Text style={[styles.titulo, { color: isDark ? '#fff' : '#007bff' }]}>SaquaInfo</Text>
       
       <View style={styles.inputArea}>

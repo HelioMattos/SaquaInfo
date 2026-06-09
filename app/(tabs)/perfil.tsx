@@ -1,17 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import React from 'react';
 import { Alert, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { auth } from '../../firebaseConfig';
 import { useAdmin } from '../../hooks/useAdmin';
+import { useAuth } from '../../hooks/useAuth';
 import { getPerfilStyles } from '../../styles/perfil.styles';
 
 export default function PerfilScreen() {
   const { isDark, toggleTheme } = useTheme();
   const styles = getPerfilStyles(isDark);
   const { isAdmin } = useAdmin();
-  const user = auth.currentUser;
+  const { user, isLoggedIn } = useAuth();
+  const router = useRouter();
 
   const handleLogout = () => {
     Alert.alert('Sair', 'Deseja realmente sair da sua conta?', [
@@ -30,6 +33,35 @@ export default function PerfilScreen() {
     ]);
   };
 
+  if (!isLoggedIn) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={[styles.content, { justifyContent: 'center' }]}>
+          <View style={styles.avatar}>
+            <Ionicons name="person-outline" size={50} color="#fff" />
+          </View>
+          <Text style={styles.userName}>Visitante</Text>
+          <Text style={[styles.userEmail, { textAlign: 'center', marginBottom: 30 }]}>
+            Faça login para acessar sua conta e, se for administrador, gerenciar eventos.
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.logoutButton, { backgroundColor: '#007bff' }]}
+            onPress={() => router.push('/login')}
+          >
+            <Ionicons name="log-in-outline" size={24} color="#fff" style={{ marginRight: 10 }} />
+            <Text style={styles.logoutText}>ENTRAR</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.infoRow} onPress={toggleTheme}>
+            <Ionicons name={isDark ? 'sunny' : 'moon'} size={24} color={isDark ? '#ffcc00' : '#555'} />
+            <Text style={styles.infoText}>Tema: {isDark ? 'Escuro' : 'Claro'}</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -38,7 +70,7 @@ export default function PerfilScreen() {
             <Ionicons name="person" size={50} color="#fff" />
           </View>
           <Text style={styles.userName}>Bem-vindo!</Text>
-          <Text style={styles.userEmail}>{user?.email || 'Usuário não identificado'}</Text>
+          <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
 
         <View style={styles.section}>
@@ -46,10 +78,18 @@ export default function PerfilScreen() {
 
           <View style={styles.infoRow}>
             <Ionicons name="shield-checkmark-outline" size={24} color="#007bff" />
-            <Text style={styles.infoText}>
-              Perfil: {isAdmin ? 'Administrador' : 'Usuário'}
-            </Text>
+            <Text style={styles.infoText}>Perfil: {isAdmin ? 'Administrador' : 'Usuário'}</Text>
           </View>
+
+          {isAdmin && (
+            <TouchableOpacity
+              style={styles.infoRow}
+              onPress={() => router.push('/cadastrar')}
+            >
+              <Ionicons name="add-circle-outline" size={24} color="#007bff" />
+              <Text style={styles.infoText}>Cadastrar novo evento</Text>
+            </TouchableOpacity>
+          )}
 
           <View style={styles.infoRow}>
             <Ionicons name="location-outline" size={24} color="#007bff" />
@@ -58,9 +98,7 @@ export default function PerfilScreen() {
 
           <TouchableOpacity style={styles.infoRow} onPress={toggleTheme}>
             <Ionicons name={isDark ? 'sunny' : 'moon'} size={24} color={isDark ? '#ffcc00' : '#555'} />
-            <Text style={styles.infoText}>
-              Tema: {isDark ? 'Escuro' : 'Claro'}
-            </Text>
+            <Text style={styles.infoText}>Tema: {isDark ? 'Escuro' : 'Claro'}</Text>
           </TouchableOpacity>
         </View>
 

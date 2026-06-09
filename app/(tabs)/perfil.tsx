@@ -1,36 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { signOut } from 'firebase/auth';
 import React from 'react';
-import { Alert, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { auth } from '../../firebaseConfig';
-import { useAdmin } from '../../hooks/useAdmin';
-import { useAuth } from '../../hooks/useAuth';
 import { getPerfilStyles } from '../../styles/perfil.styles';
+import { confirmarLogout, fazerLogout } from '../../utils/authActions';
 
 export default function PerfilScreen() {
   const { isDark, toggleTheme } = useTheme();
   const styles = getPerfilStyles(isDark);
-  const { isAdmin } = useAdmin();
-  const { user, isLoggedIn } = useAuth();
+  const { user, isLoggedIn, isAdmin } = useAuth();
   const router = useRouter();
 
   const handleLogout = () => {
-    Alert.alert('Sair', 'Deseja realmente sair da sua conta?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await signOut(auth);
-          } catch {
-            Alert.alert('Erro', 'Não foi possível deslogar.');
-          }
-        },
-      },
-    ]);
+    confirmarLogout(async () => {
+      await fazerLogout();
+    });
   };
 
   if (!isLoggedIn) {
@@ -82,10 +68,7 @@ export default function PerfilScreen() {
           </View>
 
           {isAdmin && (
-            <TouchableOpacity
-              style={styles.infoRow}
-              onPress={() => router.push('/cadastrar')}
-            >
+            <TouchableOpacity style={styles.infoRow} onPress={() => router.push('/cadastrar')}>
               <Ionicons name="add-circle-outline" size={24} color="#007bff" />
               <Text style={styles.infoText}>Cadastrar novo evento</Text>
             </TouchableOpacity>
@@ -102,7 +85,7 @@ export default function PerfilScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={24} color="#fff" style={{ marginRight: 10 }} />
           <Text style={styles.logoutText}>SAIR DA CONTA</Text>
         </TouchableOpacity>

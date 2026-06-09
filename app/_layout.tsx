@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider } from '../context/ThemeContext';
 import { auth } from '../firebaseConfig';
 
@@ -24,19 +25,21 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="registrar" />
-        <Stack.Screen
-          name="cadastrar"
-          options={{
-            headerShown: true,
-            title: 'Gerenciar Evento',
-          }}
-        />
-      </Stack>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="registrar" />
+          <Stack.Screen
+            name="cadastrar"
+            options={{
+              headerShown: true,
+              title: 'Gerenciar Evento',
+            }}
+          />
+        </Stack>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

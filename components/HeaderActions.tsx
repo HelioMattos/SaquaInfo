@@ -2,9 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useAdmin } from '../hooks/useAdmin';
-import { useAuth } from '../hooks/useAuth';
 
 interface HeaderActionsProps {
   showThemeToggle?: boolean;
@@ -13,8 +12,7 @@ interface HeaderActionsProps {
 export default function HeaderActions({ showThemeToggle = false }: HeaderActionsProps) {
   const router = useRouter();
   const { isDark, toggleTheme } = useTheme();
-  const { isLoggedIn } = useAuth();
-  const { isAdmin } = useAdmin();
+  const { isLoggedIn, isAdmin } = useAuth();
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>

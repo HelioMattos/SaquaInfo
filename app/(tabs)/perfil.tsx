@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { getPerfilStyles } from '../../styles/perfil.styles';
@@ -22,7 +22,11 @@ export default function PerfilScreen() {
   if (!isLoggedIn) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={[styles.content, { justifyContent: 'center' }]}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, { justifyContent: 'center' }]}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.avatar}>
             <Ionicons name="person-outline" size={50} color="#fff" />
           </View>
@@ -39,18 +43,22 @@ export default function PerfilScreen() {
             <Text style={styles.logoutText}>ENTRAR</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.infoRow} onPress={toggleTheme}>
+          <TouchableOpacity style={[styles.infoRow, styles.infoRowVisitante]} onPress={toggleTheme}>
             <Ionicons name={isDark ? 'sunny' : 'moon'} size={24} color={isDark ? '#ffcc00' : '#555'} />
             <Text style={styles.infoText}>Tema: {isDark ? 'Escuro' : 'Claro'}</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <View style={styles.avatar}>
             <Ionicons name="person" size={50} color="#fff" />
@@ -89,7 +97,7 @@ export default function PerfilScreen() {
           <Ionicons name="log-out-outline" size={24} color="#fff" style={{ marginRight: 10 }} />
           <Text style={styles.logoutText}>SAIR DA CONTA</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

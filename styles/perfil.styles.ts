@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 export const getPerfilStyles = (isDark: boolean) => {
   const theme = {
@@ -14,9 +14,13 @@ export const getPerfilStyles = (isDark: boolean) => {
       flex: 1,
       backgroundColor: theme.fundo,
     },
-    content: {
+    scroll: {
       flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
       padding: 20,
+      paddingBottom: Platform.OS === 'web' ? 100 : 40,
       alignItems: 'center',
     },
     header: {
@@ -68,6 +72,12 @@ export const getPerfilStyles = (isDark: boolean) => {
       paddingVertical: 10,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
+      width: '100%',
+    },
+    infoRowVisitante: {
+      marginTop: 24,
+      borderBottomWidth: 0,
+      justifyContent: 'center',
     },
     infoText: {
       marginLeft: 15,
@@ -82,8 +92,7 @@ export const getPerfilStyles = (isDark: boolean) => {
       borderRadius: 12,
       justifyContent: 'center',
       alignItems: 'center',
-      marginTop: 'auto',
-      marginBottom: 20,
+      marginTop: 8,
     },
     logoutText: {
       color: '#fff',

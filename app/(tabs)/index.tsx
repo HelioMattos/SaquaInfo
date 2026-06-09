@@ -9,7 +9,7 @@ import LogoSaquaInfo from '../../components/LogoSaquaInfo';
 import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../firebaseConfig';
 import { getIndexStyles } from '../../styles/index.styles';
-import { Evento, parseImagens } from '../../types/evento';
+import { Evento, eventoEstaAtivo, parseImagens } from '../../types/evento';
 
 export default function HomeScreen() {
   const { isDark } = useTheme();
@@ -25,7 +25,8 @@ export default function HomeScreen() {
       (querySnapshot) => {
         const lista: Evento[] = [];
         querySnapshot.forEach((docSnap) => {
-          lista.push({ id: docSnap.id, ...docSnap.data() } as Evento);
+          const evento = { id: docSnap.id, ...docSnap.data() } as Evento;
+          if (eventoEstaAtivo(evento)) lista.push(evento);
         });
         setEventos(lista);
         setCarregando(false);
@@ -53,7 +54,7 @@ export default function HomeScreen() {
           contentContainerStyle={{ padding: 15 }}
           ListEmptyComponent={
             <Text style={{ textAlign: 'center', color: styles.colors.subtexto, marginTop: 40 }}>
-              Nenhum evento cadastrado ainda.
+              Nenhum evento ativo no momento.
             </Text>
           }
           renderItem={({ item }) => {

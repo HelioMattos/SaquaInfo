@@ -3,7 +3,7 @@ import { collection, onSnapshot, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { db } from '../firebaseConfig';
-import { Evento } from '../types/evento';
+import { Evento, eventoEstaAtivo } from '../types/evento';
 
 function escapeHtml(texto: string) {
   return texto
@@ -23,7 +23,8 @@ export default function MapaExplore() {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const lista: Evento[] = [];
       querySnapshot.forEach((docSnap) => {
-        lista.push({ id: docSnap.id, ...docSnap.data() } as Evento);
+        const evento = { id: docSnap.id, ...docSnap.data() } as Evento;
+        if (eventoEstaAtivo(evento)) lista.push(evento);
       });
       setEventos(lista);
       setCarregando(false);

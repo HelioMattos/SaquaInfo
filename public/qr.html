@@ -27,11 +27,7 @@
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
       border: 1px solid #eee;
     }
-    h1 {
-      margin: 0 0 8px;
-      color: #007bff;
-      font-size: 1.6rem;
-    }
+    h1 { margin: 0 0 8px; color: #007bff; font-size: 1.6rem; }
     p { margin: 0 0 16px; color: #666; line-height: 1.5; }
     img {
       width: 280px;
@@ -74,14 +70,9 @@
     <h1>SaquaInfo</h1>
     <p>Escaneie o QR Code para abrir o app no celular</p>
 
-    <img
-      src="/qrcode-saquainfo.png"
-      alt="QR Code do SaquaInfo"
-      width="280"
-      height="280"
-    />
+    <img id="qr" alt="QR Code do SaquaInfo" width="280" height="280" />
 
-    <a class="link" href="https://saquainfo.vercel.app">https://saquainfo.vercel.app</a>
+    <a class="link" id="site-link" href="#"></a>
 
     <div class="dicas">
       <strong>Android:</strong> abra a câmera ou leitor de QR → toque no link → no Chrome, use
@@ -90,9 +81,23 @@
       <em>Compartilhar</em> → <em>Adicionar à Tela de Início</em>.
     </div>
 
-    <a class="baixar" href="/qrcode-saquainfo.png" download="saquainfo-qrcode.png">
+    <a class="baixar" id="baixar" href="#" download="saquainfo-qrcode.png">
       Baixar imagem do QR Code
     </a>
   </div>
+
+  <script>
+    var siteUrl = window.location.origin;
+    var qrUrl =
+      'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=' +
+      encodeURIComponent(siteUrl);
+
+    document.getElementById('qr').src = qrUrl;
+    document.getElementById('baixar').href = qrUrl;
+
+    var link = document.getElementById('site-link');
+    link.href = siteUrl;
+    link.textContent = siteUrl;
+  </script>
 </body>
 </html>

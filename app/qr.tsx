@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Linking,
   Platform,
@@ -12,14 +12,13 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import { SITE_URL } from '../utils/site';
-
-const QR_IMAGE =
-  Platform.OS === 'web' ? '/qrcode-saquainfo.png' : `${SITE_URL}/qrcode-saquainfo.png`;
+import { getQrCodeImageUrl, getSiteUrl } from '../utils/site';
 
 export default function QrScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
+  const siteUrl = useMemo(() => getSiteUrl(), []);
+  const qrImage = useMemo(() => getQrCodeImageUrl(siteUrl), [siteUrl]);
 
   const fundo = isDark ? '#121212' : '#f8f9fa';
   const card = isDark ? '#1e1e1e' : '#fff';
@@ -29,19 +28,19 @@ export default function QrScreen() {
 
   const copiarLink = async () => {
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
-      await navigator.clipboard.writeText(SITE_URL);
+      await navigator.clipboard.writeText(siteUrl);
       window.alert('Link copiado!');
       return;
     }
 
     await Share.share({
-      message: `Acesse o SaquaInfo: ${SITE_URL}`,
-      url: SITE_URL,
+      message: `Acesse o SaquaInfo: ${siteUrl}`,
+      url: siteUrl,
     });
   };
 
   const abrirLink = () => {
-    Linking.openURL(SITE_URL);
+    Linking.openURL(siteUrl);
   };
 
   return (
@@ -82,13 +81,13 @@ export default function QrScreen() {
           }}
         >
           <Image
-            source={{ uri: QR_IMAGE }}
+            source={{ uri: qrImage }}
             style={{ width: 260, height: 260, borderRadius: 12 }}
             contentFit="contain"
           />
 
           <TouchableOpacity onPress={abrirLink} style={{ marginTop: 16 }}>
-            <Text style={{ color: '#007bff', fontWeight: '600', textAlign: 'center' }}>{SITE_URL}</Text>
+            <Text style={{ color: '#007bff', fontWeight: '600', textAlign: 'center' }}>{siteUrl}</Text>
           </TouchableOpacity>
         </View>
 

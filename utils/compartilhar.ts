@@ -1,5 +1,5 @@
 import { Alert, Linking, Platform } from 'react-native';
-import { SITE_URL } from './site';
+import { getSiteUrl } from './site';
 
 type ParamsEvento = Record<string, string | string[] | undefined>;
 
@@ -14,9 +14,10 @@ export function gerarLinkEvento(params: ParamsEvento): string {
     return window.location.href;
   }
 
+  const siteUrl = getSiteUrl();
   const id = valorParam(params, 'id');
   if (id) {
-    return `${SITE_URL}/modal?id=${encodeURIComponent(id)}`;
+    return `${siteUrl}/modal?id=${encodeURIComponent(id)}`;
   }
 
   const search = new URLSearchParams();
@@ -28,7 +29,7 @@ export function gerarLinkEvento(params: ParamsEvento): string {
   });
 
   const query = search.toString();
-  return query ? `${SITE_URL}/modal?${query}` : SITE_URL;
+  return query ? `${siteUrl}/modal?${query}` : siteUrl;
 }
 
 export function compartilharEventoWhatsApp(

@@ -1,6 +1,5 @@
 import { Alert, Linking, Platform } from 'react-native';
-
-const SITE_URL = 'https://saquainfo.vercel.app';
+import { SITE_URL } from './site';
 
 type ParamsEvento = Record<string, string | string[] | undefined>;
 

@@ -43,6 +43,11 @@ export default function PerfilScreen() {
             <Text style={styles.logoutText}>ENTRAR</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.infoRow} onPress={() => router.push('/qr')}>
+            <Ionicons name="qr-code-outline" size={24} color="#007bff" />
+            <Text style={styles.infoText}>QR Code do app</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={[styles.infoRow, styles.infoRowVisitante]} onPress={toggleTheme}>
             <Ionicons name={isDark ? 'sunny' : 'moon'} size={24} color={isDark ? '#ffcc00' : '#555'} />
             <Text style={styles.infoText}>Tema: {isDark ? 'Escuro' : 'Claro'}</Text>
@@ -86,6 +91,11 @@ export default function PerfilScreen() {
             <Ionicons name="location-outline" size={24} color="#007bff" />
             <Text style={styles.infoText}>Localização: Saquarema, RJ</Text>
           </View>
+
+          <TouchableOpacity style={styles.infoRow} onPress={() => router.push('/qr')}>
+            <Ionicons name="qr-code-outline" size={24} color="#007bff" />
+            <Text style={styles.infoText}>QR Code do app</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity style={styles.infoRow} onPress={toggleTheme}>
             <Ionicons name={isDark ? 'sunny' : 'moon'} size={24} color={isDark ? '#ffcc00' : '#555'} />

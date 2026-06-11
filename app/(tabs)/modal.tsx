@@ -5,7 +5,6 @@ import { deleteDoc, doc, onSnapshot } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   FlatList,
   NativeScrollEvent,
@@ -23,6 +22,7 @@ import { useAdmin } from '../../hooks/useAdmin';
 import { getModalStyles } from '../../styles/modal.styles';
 import { Evento, parseImagens } from '../../types/evento';
 import { compartilharEventoWhatsApp } from '../../utils/compartilhar';
+import { confirmarAcao, mostrarAlerta } from '../../utils/mensagens';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_WIDTH = SCREEN_WIDTH - 40;
@@ -82,6 +82,19 @@ export default function ModalScreen() {
   const latitude = evento?.latitude ?? -22.9251;
   const longitude = evento?.longitude ?? -42.4862;
 
+  const handleExcluir = () => {
+    if (!evento) return;
+
+    confirmarAcao('Excluir', 'Deseja remover este evento?', 'Excluir', async () => {
+      try {
+        await deleteDoc(doc(db, 'eventos', evento.id));
+        router.back();
+      } catch {
+        mostrarAlerta('Erro', 'Não foi possível excluir o evento. Tente novamente.');
+      }
+    });
+  };
+
   const handleShareWhatsApp = () => {
     if (!evento) return;
     compartilharEventoWhatsApp(
@@ -130,22 +143,7 @@ export default function ModalScreen() {
               >
                 <Ionicons name="create-outline" size={24} color="#007bff" />
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.iconBtn}
-                onPress={() => {
-                  Alert.alert('Excluir', 'Deseja remover este evento?', [
-                    { text: 'Cancelar' },
-                    {
-                      text: 'Excluir',
-                      style: 'destructive',
-                      onPress: async () => {
-                        await deleteDoc(doc(db, 'eventos', evento.id));
-                        router.back();
-                      },
-                    },
-                  ]);
-                }}
-              >
+              <TouchableOpacity style={styles.iconBtn} onPress={handleExcluir}>
                 <Ionicons name="trash-outline" size={24} color="#dc3545" />
               </TouchableOpacity>
             </>

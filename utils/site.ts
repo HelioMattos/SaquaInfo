@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-const URL_PADRAO = 'https://saquainfo.vercel.app';
+const URL_PADRAO = 'https://project-3ldwb.vercel.app';
 
 /** URL pública do app — na web usa o endereço atual (Vercel). */
 export function getSiteUrl(): string {

@@ -11,6 +11,15 @@ import { db } from '../../firebaseConfig';
 import { getIndexStyles } from '../../styles/index.styles';
 import { Evento, eventoEstaAtivo, parseImagens } from '../../types/evento';
 
+function formatarInicio(dataString: string) {
+  const data = new Date(dataString);
+  if (isNaN(data.getTime())) return 'Data não informada';
+  return `${data.toLocaleDateString('pt-BR')} às ${data.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })}`;
+}
+
 export default function HomeScreen() {
   const { isDark } = useTheme();
   const styles = getIndexStyles(isDark);
@@ -79,14 +88,21 @@ export default function HomeScreen() {
                 />
 
                 <View style={styles.cardInfo}>
-                  <Text style={styles.cardTitulo}>{item.titulo}</Text>
-                  <Text style={styles.cardData}>
-                    {new Date(item.dataInicio).toLocaleDateString('pt-BR')}
+                  <Text style={styles.cardTitulo} numberOfLines={2}>
+                    {item.titulo}
                   </Text>
-                  <Text style={styles.cardLocal}>📍 {item.local}</Text>
+                  <View style={styles.cardMetaRow}>
+                    <Text style={styles.cardData}>{formatarInicio(item.dataInicio)}</Text>
+                    <View style={styles.cardCategoria}>
+                      <Text style={styles.cardCategoriaTexto}>{item.categoria || 'Outros'}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.cardLocal} numberOfLines={1}>
+                    📍 {item.local}
+                  </Text>
                 </View>
 
-                <Ionicons name="chevron-forward" size={20} color="#007bff" />
+                <Ionicons name="chevron-forward" size={20} color="#007bff" style={styles.cardSeta} />
               </TouchableOpacity>
             );
           }}

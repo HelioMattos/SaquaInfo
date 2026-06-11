@@ -42,7 +42,7 @@ export const getIndexStyles = (isDark: boolean) => {
       padding: 12,
       borderRadius: 15,
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       marginBottom: 15,
       borderWidth: 1,
       backgroundColor: theme.card,
@@ -64,16 +64,38 @@ export const getIndexStyles = (isDark: boolean) => {
       fontWeight: 'bold',
       color: theme.texto,
     },
+    cardMetaRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 4,
+    },
     cardData: {
       color: '#28a745',
       fontSize: 12,
       fontWeight: 'bold',
-      marginTop: 4,
+      flexShrink: 1,
+    },
+    cardCategoria: {
+      backgroundColor: isDark ? '#1a3a5c' : '#e1f0ff',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 6,
+    },
+    cardCategoriaTexto: {
+      color: '#007bff',
+      fontSize: 11,
+      fontWeight: 'bold',
     },
     cardLocal: {
       color: theme.subtexto,
       fontSize: 13,
       marginTop: 4,
+    },
+    cardSeta: {
+      alignSelf: 'center',
+      marginTop: 30,
     },
   });
 
